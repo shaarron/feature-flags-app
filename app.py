@@ -4,88 +4,279 @@ from bson.objectid import ObjectId
 import os
 from flask import render_template
 from flask_cors import CORS
+import json
+import uuid
+from datetime import datetime
 
 app = Flask(__name__)
 
-# MongoDB connection
-client = MongoClient(os.environ.get('MONGO_URI', 'mongodb://localhost:27017/'))
-
-db = client.feature_flags_db
-feature_flags_collection = db.flags
-
-# hardcoded flags for demonstration purposes
-try:
-    print("Seeding database with environment-based feature flags...")
-    # Insert flags with predefined environment-specific values
-    flag_configs = [
-        {
-            "name": "new-dashboard",
-            "description": "Ship the redesigned dashboard.",
-            "environments": {
-                "development": True,   
-                "staging": True,       
-                "production": False    
-            }
-        },
-        {
-            "name": "beta-checkout",
-            "description": "New checkout flow for selected users.",
-            "environments": {
-                "development": True,   
-                "staging": True,       
-                "production": True     
-            }
-        },
-        {
-            "name": "recommendations",
-            "description": "Product recommendations widget.",
-            "environments": {
-                "development": True,   
-                "staging": False,      
-                "production": False    
-            }
-        },
-        {
-            "name": "ab-test-home-hero",
-            "description": "A/B test variant of the home hero section.",
-            "environments": {
-                "development": True,   
-                "staging": True,       
-                "production": True     
-            }
-        },
-        {
-            "name": "dark-mode",
-            "description": "Enable dark theme toggle for all users.",
-            "environments": {
-                "development": True,  
-                "staging": True,       
-                "production": True     
-            }
-        },
-        {
-            "name": "limit-rate-api",
-            "description": "Enable request rate limiting on APIs.",
-            "environments": {
-                "development": False,  
-                "staging": True,       
-                "production": True     
-            }
-        }
-    ]
+# Database connection and fallback storage
+class FeatureFlagStorage:
+    def __init__(self):
+        self.mongo_available = False
+        self.client = None
+        self.db = None
+        self.collection = None
+        self.fallback_storage = []
+        self._initialize_mongo()
+        self._seed_fallback_data()
     
-    for flag_config in flag_configs:
-        feature_flags_collection.insert_one(flag_config)
+    def _initialize_mongo(self):
+        """Initialize MongoDB connection with error handling"""
+        try:
+            mongo_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+            self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            # Test connection
+            self.client.admin.command('ping')
+            self.db = self.client.feature_flags_db
+            self.collection = self.db.flags
+            self.mongo_available = True
+            print("MongoDB connection established successfully!")
+        except Exception as e:
+            print(f"MongoDB connection failed: {e}")
+            print("Falling back to in-memory storage")
+            self.mongo_available = False
     
-    print("Database seeding completed successfully!")
-except Exception as e:
-    print(f"Error during seeding: {e}")
-    # Ignore seeding errors at startup
-    pass
+    def _seed_fallback_data(self):
+        """Seed fallback storage with default feature flags"""
+        if not self.mongo_available:
+            self.fallback_storage = [
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "new-dashboard",
+                    "description": "Ship the redesigned dashboard.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": False    
+                    }
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "beta-checkout",
+                    "description": "New checkout flow for selected users.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "recommendations",
+                    "description": "Product recommendations widget.",
+                    "environments": {
+                        "development": True,   
+                        "staging": False,      
+                        "production": False    
+                    }
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "ab-test-home-hero",
+                    "description": "A/B test variant of the home hero section.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "dark-mode",
+                    "description": "Enable dark theme toggle for all users.",
+                    "environments": {
+                        "development": True,  
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "name": "limit-rate-api",
+                    "description": "Enable request rate limiting on APIs.",
+                    "environments": {
+                        "development": False,  
+                        "staging": True,       
+                        "production": True     
+                    }
+                }
+            ]
+            print("Fallback storage initialized with default feature flags")
+    
+    def insert_one(self, document):
+        """Insert a document into storage"""
+        if self.mongo_available:
+            try:
+                result = self.collection.insert_one(document)
+                document['_id'] = str(result.inserted_id)
+                return result
+            except Exception as e:
+                print(f"MongoDB insert failed, using fallback: {e}")
+                self.mongo_available = False
+        
+        # Fallback to in-memory storage
+        document['_id'] = str(uuid.uuid4())
+        self.fallback_storage.append(document)
+        return type('Result', (), {'inserted_id': document['_id']})()
+    
+    def find(self, query=None):
+        """Find documents in storage"""
+        if self.mongo_available:
+            try:
+                return self.collection.find(query or {})
+            except Exception as e:
+                print(f"MongoDB find failed, using fallback: {e}")
+                self.mongo_available = False
+        
+        # Fallback to in-memory storage
+        if query is None:
+            return self.fallback_storage.copy()
+        # Simple query matching (for basic use cases)
+        results = []
+        for doc in self.fallback_storage:
+            if all(doc.get(k) == v for k, v in query.items()):
+                results.append(doc)
+        return results
+    
+    def find_one(self, query):
+        """Find one document in storage"""
+        if self.mongo_available:
+            try:
+                return self.collection.find_one(query)
+            except Exception as e:
+                print(f"MongoDB find_one failed, using fallback: {e}")
+                self.mongo_available = False
+        
+        # Fallback to in-memory storage
+        for doc in self.fallback_storage:
+            if all(doc.get(k) == v for k, v in query.items()):
+                return doc
+        return None
+    
+    def update_one(self, query, update):
+        """Update one document in storage"""
+        if self.mongo_available:
+            try:
+                return self.collection.update_one(query, update)
+            except Exception as e:
+                print(f"MongoDB update failed, using fallback: {e}")
+                self.mongo_available = False
+        
+        # Fallback to in-memory storage
+        for i, doc in enumerate(self.fallback_storage):
+            if all(doc.get(k) == v for k, v in query.items()):
+                if '$set' in update:
+                    doc.update(update['$set'])
+                    self.fallback_storage[i] = doc
+                return type('Result', (), {'matched_count': 1, 'modified_count': 1})()
+        return type('Result', (), {'matched_count': 0, 'modified_count': 0})()
+    
+    def delete_one(self, query):
+        """Delete one document from storage"""
+        if self.mongo_available:
+            try:
+                return self.collection.delete_one(query)
+            except Exception as e:
+                print(f"MongoDB delete failed, using fallback: {e}")
+                self.mongo_available = False
+        
+        # Fallback to in-memory storage
+        for i, doc in enumerate(self.fallback_storage):
+            if all(doc.get(k) == v for k, v in query.items()):
+                del self.fallback_storage[i]
+                return type('Result', (), {'deleted_count': 1})()
+        return type('Result', (), {'deleted_count': 0})()
+
+# Initialize storage
+storage = FeatureFlagStorage()
+feature_flags_collection = storage
+
+# Seed database if MongoDB is available
+if storage.mongo_available:
+    try:
+        print("Seeding database with environment-based feature flags...")
+        # Insert flags with predefined environment-specific values
+        flag_configs = [
+            {
+                "name": "new-dashboard",
+                "description": "Ship the redesigned dashboard.",
+                "environments": {
+                    "development": True,   
+                    "staging": True,       
+                    "production": False    
+                }
+            },
+            {
+                "name": "beta-checkout",
+                "description": "New checkout flow for selected users.",
+                "environments": {
+                    "development": True,   
+                    "staging": True,       
+                    "production": True     
+                }
+            },
+            {
+                "name": "recommendations",
+                "description": "Product recommendations widget.",
+                "environments": {
+                    "development": True,   
+                    "staging": False,      
+                    "production": False    
+                }
+            },
+            {
+                "name": "ab-test-home-hero",
+                "description": "A/B test variant of the home hero section.",
+                "environments": {
+                    "development": True,   
+                    "staging": True,       
+                    "production": True     
+                }
+            },
+            {
+                "name": "dark-mode",
+                "description": "Enable dark theme toggle for all users.",
+                "environments": {
+                    "development": True,  
+                    "staging": True,       
+                    "production": True     
+                }
+            },
+            {
+                "name": "limit-rate-api",
+                "description": "Enable request rate limiting on APIs.",
+                "environments": {
+                    "development": False,  
+                    "staging": True,       
+                    "production": True     
+                }
+            }
+        ]
+        
+        for flag_config in flag_configs:
+            feature_flags_collection.insert_one(flag_config)
+        
+        print("Database seeding completed successfully!")
+    except Exception as e:
+        print(f"Error during seeding: {e}")
+        # Ignore seeding errors at startup
+        pass
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint that works without database"""
+    status = {
+        "status": "healthy",
+        "database": "connected" if storage.mongo_available else "fallback",
+        "storage_type": "mongodb" if storage.mongo_available else "in-memory",
+        "flags_count": len(list(feature_flags_collection.find()))
+    }
+    return jsonify(status), 200
 
 # Routes
 @app.route('/flags', methods=['POST'])
@@ -126,7 +317,15 @@ def get_flags():
 
 @app.route('/flags/<id>', methods=['GET'])
 def get_flag(id):
-    flag = feature_flags_collection.find_one({"_id": ObjectId(id)})
+    # Handle both MongoDB ObjectId and fallback string IDs
+    if storage.mongo_available:
+        try:
+            flag = feature_flags_collection.find_one({"_id": ObjectId(id)})
+        except:
+            flag = feature_flags_collection.find_one({"_id": id})
+    else:
+        flag = feature_flags_collection.find_one({"_id": id})
+    
     if flag:
         flag['_id'] = str(flag['_id'])
         return jsonify(flag), 200
@@ -150,16 +349,34 @@ def update_flag(id):
     if not update_fields:
         return jsonify({"error": "No fields to update"}), 400
 
-    result = feature_flags_collection.update_one({"_id": ObjectId(id)}, {"$set": update_fields})
+    # Handle both MongoDB ObjectId and fallback string IDs
+    if storage.mongo_available:
+        try:
+            query = {"_id": ObjectId(id)}
+        except:
+            query = {"_id": id}
+    else:
+        query = {"_id": id}
+
+    result = feature_flags_collection.update_one(query, {"$set": update_fields})
     if result.matched_count:
-        flag = feature_flags_collection.find_one({"_id": ObjectId(id)})
+        flag = feature_flags_collection.find_one(query)
         flag['_id'] = str(flag['_id'])
         return jsonify(flag), 200
     return jsonify({"error": "Feature flag not found"}), 404
 
 @app.route('/flags/<id>', methods=['DELETE'])
 def delete_flag(id):
-    result = feature_flags_collection.delete_one({"_id": ObjectId(id)})
+    # Handle both MongoDB ObjectId and fallback string IDs
+    if storage.mongo_available:
+        try:
+            query = {"_id": ObjectId(id)}
+        except:
+            query = {"_id": id}
+    else:
+        query = {"_id": id}
+    
+    result = feature_flags_collection.delete_one(query)
     if result.deleted_count:
         return jsonify({"message": "Feature flag deleted"}), 204
     return jsonify({"error": "Feature flag not found"}), 404
@@ -169,20 +386,29 @@ def toggle_flag(id):
     data = request.get_json()
     environment = data.get('environment', 'staging')
     
-    flag = feature_flags_collection.find_one({"_id": ObjectId(id)})
+    # Handle both MongoDB ObjectId and fallback string IDs
+    if storage.mongo_available:
+        try:
+            query = {"_id": ObjectId(id)}
+        except:
+            query = {"_id": id}
+    else:
+        query = {"_id": id}
+    
+    flag = feature_flags_collection.find_one(query)
     if flag:
         current_status = flag.get('environments', {}).get(environment, False)
         new_status = not current_status
         
         # Update the specific environment
         update_result = feature_flags_collection.update_one(
-            {"_id": ObjectId(id)}, 
+            query, 
             {"$set": {f"environments.{environment}": new_status}}
         )
         
         if update_result.modified_count:
             # Return updated flag
-            updated_flag = feature_flags_collection.find_one({"_id": ObjectId(id)})
+            updated_flag = feature_flags_collection.find_one(query)
             updated_flag['_id'] = str(updated_flag['_id'])
             updated_flag['enabled'] = new_status
             return jsonify(updated_flag), 200
