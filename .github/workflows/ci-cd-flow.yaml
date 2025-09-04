@@ -27,9 +27,6 @@ jobs:
         run: |
           source venv/bin/activate
           nohup python app.py > app.log 2>&1 &
-
-      - name: print log
-        run: cat app.log
     
       - name: Run Unit Test
         run: |
@@ -47,47 +44,47 @@ jobs:
             && echo "App is up" \
             || (echo "Unexpected status: $status" && exit 1)
 
-  # e2e_test:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
+  e2e_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-  #     - name: Run docker compose up
-  #       env:
-  #         MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
-  #         MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-  #         MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
-  #       run: docker compose -f docker-compose.local.yaml up -d --wait --build
+      - name: Run docker compose up
+        env:
+          MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
+          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
+        run: docker compose -f docker-compose.local.yaml up -d --wait --build
 
-  #     - name: Verify containers
-  #       run: docker ps -a
+      - name: Verify containers
+        run: docker ps -a
 
-  #     - name: Run E2E Test
-  #       run: |
-  #         status=$(
-  #           curl \
-  #             --retry 5 \
-  #             --retry-delay 2 \
-  #             --retry-connrefused \
-  #             --silent \
-  #             --write-out "%{http_code}" \
-  #             --output /dev/null \
-  #             http://localhost:80/flags
-  #         )
-  #         test "$status" -eq 200 \
-  #           && echo "App is up" \
-  #           || (echo "Unexpected status: $status" && exit 1)     
-  #         echo "E2E test passed"
+      - name: Run E2E Test
+        run: |
+          status=$(
+            curl \
+              --retry 5 \
+              --retry-delay 2 \
+              --retry-connrefused \
+              --silent \
+              --write-out "%{http_code}" \
+              --output /dev/null \
+              http://localhost
+          )
+          test "$status" -eq 200 \
+            && echo "App is up" \
+            || (echo "Unexpected status: $status" && exit 1)     
+          echo "E2E test passed"
 
-  #     - name: Save Docker image to file
-  #       run: docker save ff-service -o ff-service.tar
+      - name: Save Docker image to file
+        run: docker save ff-service -o ff-service.tar
 
-  #     - name: Upload image artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: docker-image
-  #         path: ff-service.tar
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: ff-service.tar
 

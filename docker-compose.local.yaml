@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    image: ff-service
     environment:
       - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@db:27017/${MONGO_INITDB_DATABASE}?authSource=admin
     depends_on:
