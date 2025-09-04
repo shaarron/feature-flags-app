@@ -64,19 +64,23 @@ jobs:
 
       - name: Run E2E Test
         run: |
-          status=$(
-            curl \
-              --retry 5 \
-              --retry-delay 2 \
-              --retry-connrefused \
-              --silent \
-              --write-out "%{http_code}" \
-              --output /dev/null \
-              http://localhost
-          )
-          test "$status" -eq 200 \
-            && echo "App is up" \
-            || (echo "Unexpected status: $status" && exit 1)     
+          set -o errexit -o pipefail
+          response=$(curl --fail --silent http://localhost/flags)
+               
+          echo "$response" | jq -e 'type == "array"' > /dev/null || {
+            echo "Response is not an array"
+            exit 1
+          }
+          
+          echo "$response" | jq -e 'length > 0' > /dev/null || {
+            echo "No feature flags found"
+            exit 1
+          }
+          
+          echo "$response" | jq -e '.[0] | has("_id") and has("name") and has("environments")' > /dev/null || {
+            echo "First flag missing required keys"
+            exit 1
+          }
           echo "E2E test passed"
 
       - name: Save Docker image to file

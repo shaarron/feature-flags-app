@@ -38,71 +38,10 @@ class FeatureFlagStorage:
             self.mongo_available = False
     
     def _seed_fallback_data(self):
-        """Seed fallback storage with default feature flags"""
+        """Initialize fallback storage as empty list"""
         if not self.mongo_available:
-            self.fallback_storage = [
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "new-dashboard",
-                    "description": "Ship the redesigned dashboard.",
-                    "environments": {
-                        "development": True,   
-                        "staging": True,       
-                        "production": False    
-                    }
-                },
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "beta-checkout",
-                    "description": "New checkout flow for selected users.",
-                    "environments": {
-                        "development": True,   
-                        "staging": True,       
-                        "production": True     
-                    }
-                },
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "recommendations",
-                    "description": "Product recommendations widget.",
-                    "environments": {
-                        "development": True,   
-                        "staging": False,      
-                        "production": False    
-                    }
-                },
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "ab-test-home-hero",
-                    "description": "A/B test variant of the home hero section.",
-                    "environments": {
-                        "development": True,   
-                        "staging": True,       
-                        "production": True     
-                    }
-                },
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "dark-mode",
-                    "description": "Enable dark theme toggle for all users.",
-                    "environments": {
-                        "development": True,  
-                        "staging": True,       
-                        "production": True     
-                    }
-                },
-                {
-                    "_id": str(uuid.uuid4()),
-                    "name": "limit-rate-api",
-                    "description": "Enable request rate limiting on APIs.",
-                    "environments": {
-                        "development": False,  
-                        "staging": True,       
-                        "production": True     
-                    }
-                }
-            ]
-            print("Fallback storage initialized with default feature flags")
+            self.fallback_storage = []
+            print("Fallback storage initialized (empty - no default flags)")
     
     def insert_one(self, document):
         """Insert a document into storage"""
