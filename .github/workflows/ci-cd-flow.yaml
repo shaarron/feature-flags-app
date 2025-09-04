@@ -146,8 +146,8 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag entrytracker $ECR_REGISTRY/$ECR_REPO:latest
-          docker tag entrytracker $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
+          docker tag ff-service $ECR_REGISTRY/$ECR_REPO:latest
+          docker tag ff-service $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
 
       - name: Push Docker image to ECR
         run: |
