@@ -24,7 +24,17 @@ class FeatureFlagStorage:
     def _initialize_mongo(self):
         """Initialize MongoDB connection with error handling"""
         try:
-            mongo_uri = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+            mongo_root_username = os.environ.get('MONGO_INITDB_ROOT_USERNAME')
+            mongo_root_password = os.environ.get('MONGO_INITDB_ROOT_PASSWORD')
+            mongo_root_database = os.environ.get('MONGO_INITDB_DATABASE')
+            mongo_host = os.environ.get('MONGO_HOST','localhost')
+            # Try authenticated connection if credentials are provided
+            if mongo_root_username and mongo_root_password:
+                mongo_uri = f"mongodb://{mongo_root_username}:{mongo_root_password}@{mongo_host}:27017/{mongo_root_database}?authSource=admin"
+            else:
+                # Fallback to localhost without authentication
+                mongo_uri ='mongodb://localhost:27017/'
+            
             self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
             # Test connection
             self.client.admin.command('ping')
