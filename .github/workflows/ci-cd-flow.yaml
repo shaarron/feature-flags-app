@@ -38,7 +38,7 @@ jobs:
               --silent \
               --write-out "%{http_code}" \
               --output /dev/null \
-              http://localhost:5000
+              http://localhost:5000/flags
           )
           test "$status" -eq 200 \
             && echo "App is up" \

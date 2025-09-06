@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
@@ -206,21 +206,6 @@ if storage.mongo_available:
         print(f"Error during seeding: {e}")
         # Ignore seeding errors at startup
         pass
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
-
-@app.route('/health')
-def health_check():
-    """Health check endpoint that works without database"""
-    status = {
-        "status": "healthy",
-        "database": "connected" if storage.mongo_available else "fallback",
-        "storage_type": "mongodb" if storage.mongo_available else "in-memory",
-        "flags_count": len(list(feature_flags_collection.find()))
-    }
-    return jsonify(status), 200
 
 # Routes
 @app.route('/flags', methods=['POST'])
