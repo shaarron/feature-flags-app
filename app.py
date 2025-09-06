@@ -131,80 +131,85 @@ class FeatureFlagStorage:
 storage = FeatureFlagStorage()
 feature_flags_collection = storage
 
-# Seed database if MongoDB is available
+# Seed database if MongoDB is available and collection is empty
 if storage.mongo_available:
     try:
-        print("Seeding database with environment-based feature flags...")
-        # Insert flags with predefined environment-specific values
-        flag_configs = [
-            {
-                "name": "new-dashboard",
-                "description": "Ship the redesigned dashboard.",
-                "environments": {
-                    "development": True,   
-                    "staging": True,       
-                    "production": False    
+        # Check if collection already has data
+        existing_flags = list(feature_flags_collection.find())
+        if existing_flags:
+            print(f"Database already contains {len(existing_flags)} feature flags. Skipping seeding.")
+        else:
+            print("Seeding database with environment-based feature flags...")
+            # Insert flags with predefined environment-specific values
+            flag_configs = [
+                {
+                    "name": "new-dashboard",
+                    "description": "Ship the redesigned dashboard.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": False    
+                    }
+                },
+                {
+                    "name": "beta-checkout",
+                    "description": "New checkout flow for selected users.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "name": "recommendations",
+                    "description": "Product recommendations widget.",
+                    "environments": {
+                        "development": True,   
+                        "staging": False,      
+                        "production": False    
+                    }
+                },
+                {
+                    "name": "ab-test-home-hero",
+                    "description": "A/B test variant of the home hero section.",
+                    "environments": {
+                        "development": True,   
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "name": "dark-mode",
+                    "description": "Enable dark theme toggle for all users.",
+                    "environments": {
+                        "development": True,  
+                        "staging": True,       
+                        "production": True     
+                    }
+                },
+                {
+                    "name": "limit-rate-api",
+                    "description": "Enable request rate limiting on APIs.",
+                    "environments": {
+                        "development": False,  
+                        "staging": True,       
+                        "production": True     
+                    }
                 }
-            },
-            {
-                "name": "beta-checkout",
-                "description": "New checkout flow for selected users.",
-                "environments": {
-                    "development": True,   
-                    "staging": True,       
-                    "production": True     
-                }
-            },
-            {
-                "name": "recommendations",
-                "description": "Product recommendations widget.",
-                "environments": {
-                    "development": True,   
-                    "staging": False,      
-                    "production": False    
-                }
-            },
-            {
-                "name": "ab-test-home-hero",
-                "description": "A/B test variant of the home hero section.",
-                "environments": {
-                    "development": True,   
-                    "staging": True,       
-                    "production": True     
-                }
-            },
-            {
-                "name": "dark-mode",
-                "description": "Enable dark theme toggle for all users.",
-                "environments": {
-                    "development": True,  
-                    "staging": True,       
-                    "production": True     
-                }
-            },
-            {
-                "name": "limit-rate-api",
-                "description": "Enable request rate limiting on APIs.",
-                "environments": {
-                    "development": False,  
-                    "staging": True,       
-                    "production": True     
-                }
-            }
-        ]
-        
-        for flag_config in flag_configs:
-            feature_flags_collection.insert_one(flag_config)
-        
-        print("Database seeding completed successfully!")
+            ]
+            
+            for flag_config in flag_configs:
+                feature_flags_collection.insert_one(flag_config)
+            
+            print("Database seeding completed successfully!")
     except Exception as e:
         print(f"Error during seeding: {e}")
         # Ignore seeding errors at startup
         pass
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
 
 @app.route('/health')
 def health_check():
