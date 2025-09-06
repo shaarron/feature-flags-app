@@ -57,7 +57,7 @@ jobs:
           MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
-        run: docker compose -f docker-compose.local.yaml up -d --wait --build
+        run: docker compose -f docker-compose.yaml up -d --wait --build
 
       - name: Verify containers
         run: docker ps -a
