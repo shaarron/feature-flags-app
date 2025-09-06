@@ -54,6 +54,7 @@ jobs:
 
       - name: Run docker compose up
         env:
+          MONGO_HOST: "db" # service name in docker-compose.yaml
           MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
