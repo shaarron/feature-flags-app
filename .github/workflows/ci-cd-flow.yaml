@@ -165,8 +165,8 @@ jobs:
             
       - name: Tag for GHCR
         run: |
-          docker tag feature-flags-api:${{ github.sha }} $GHCR/feature-flags-api:latest
-          docker tag feature-flags-api:${{ github.sha }} $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
+          docker tag feature-flags-api $GHCR/feature-flags-api:latest
+          docker tag feature-flags-api $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
       
       - name: Push to GHCR
         run: |
