@@ -58,7 +58,7 @@ jobs:
           MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
-        run: docker compose -f docker-compose.yaml up -d --wait --build
+        run: docker compose -f docker-compose.local.yaml up -d --wait --build
 
       - name: Verify containers
         run: docker ps -a
@@ -85,13 +85,13 @@ jobs:
           echo "E2E test passed"
 
       - name: Save Docker image to file
-        run: docker save ff-service -o ff-service.tar
+        run: docker save feature-flags-api -o feature-flags-api.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
-          path: ff-service.tar
+          path: feature-flags-api.tar
 
   version:
     needs: [unit_test, e2e_test]
@@ -134,7 +134,7 @@ jobs:
          name: docker-image
 
       - name: Load Docker image
-        run: docker load -i ff-service.tar
+        run: docker load -i feature-flags-api.tar
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -148,8 +148,8 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag ff-service $ECR_REGISTRY/$ECR_REPO:latest
-          docker tag ff-service $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
+          docker tag feature-flags-api $ECR_REGISTRY/$ECR_REPO:latest
+          docker tag feature-flags-api $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
 
       - name: Push Docker image to ECR
         run: |
