@@ -54,7 +54,7 @@ jobs:
 
       - name: Run docker compose up
         env:
-          MONGO_HOST: "db" # service name in docker-compose.yaml
+          # MONGO_HOST: "db" # service name in docker-compose.yaml
           MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
@@ -119,6 +119,7 @@ jobs:
     env:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
       ECR_REPO: ${{ vars.ECR_REPO }}
+      GHCR: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
     needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -154,3 +155,20 @@ jobs:
         run: |
           docker push $ECR_REGISTRY/$ECR_REPO:latest
           docker push $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
+       
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+            
+      - name: Tag for GHCR
+        run: |
+          docker tag feature-flags-api:${{ github.sha }} $GHCR/feature-flags-api:latest
+          docker tag feature-flags-api:${{ github.sha }} $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
+      
+      - name: Push to GHCR
+        run: |
+          docker push $GHCR/feature-flags-api:latest
+          docker push $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
