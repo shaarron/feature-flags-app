@@ -83,7 +83,7 @@ MONGO_INITDB_ROOT_PASSWORD=
 EOF
 
 # Start all services
-docker-compose up -d
+docker compose -f docker-compose.local.yaml up -d
 ```
 
 The application will be available at:
