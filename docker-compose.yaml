@@ -1,12 +1,11 @@
 services:
-  app:
-    build: .
-    image: ff-service
+  api:
+    image: ghcr.io/shaarron/feature-flags-service/feature-flags-api:latest
     environment:
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_HOST=db
     depends_on:
       db:
         condition: service_healthy
@@ -15,58 +14,52 @@ services:
       interval: 5s
       timeout: 2s
       retries: 20
-    volumes:
-      - .:/app
     networks:
       - app-network
-      - mongo-network
+      - db-network
 
   db:
-    image: mongo:latest
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --username $MONGO_INITDB_ROOT_USERNAME --password $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 30
       start_period: 20s
-    environment:
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-    ports:
-      - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - db-data:/data/db
     networks:
-      - mongo-network
+      - db-network
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./static:/usr/share/nginx/html/static
       - ./templates:/usr/share/nginx/html/templates
-    depends_on:
-      app:
-        condition: service_healthy
-    networks:
-      - app-network
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
+    networks:
+      - app-network
 
 volumes:
-  mongo_data:
+  db-data:
 
 networks:
   app-network:
     driver: bridge
-  mongo-network:
+  db-network:
     driver: bridge
-
-

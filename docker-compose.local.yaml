@@ -1,5 +1,5 @@
 services:
-  app:
+  api:
     build: .
     image: feature-flags-api
     environment:
@@ -17,7 +17,7 @@ services:
       retries: 20
     networks:
       - app-network
-      - mongo-network
+      - db-network
 
   db:
     image: mongo:6.0
@@ -32,16 +32,16 @@ services:
       retries: 30
       start_period: 20s
     volumes:
-      - mongo_data:/data/db
+      - db-data:/data/db
     networks:
-      - mongo-network
+      - db-network
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
     depends_on:
-      app:
+      api:
         condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
@@ -57,10 +57,10 @@ services:
       - app-network
 
 volumes:
-  mongo_data:
+  db-data:
 
 networks:
   app-network:
     driver: bridge
-  mongo-network:
+  db-network:
     driver: bridge
