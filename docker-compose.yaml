@@ -40,7 +40,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      app:
+      api:
         condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
