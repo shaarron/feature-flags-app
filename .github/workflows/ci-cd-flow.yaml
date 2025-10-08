@@ -123,6 +123,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     permissions:
+      packages: write
       id-token: write # for OIDC
       contents: read
     timeout-minutes: 5
