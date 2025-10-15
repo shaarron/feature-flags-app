@@ -84,14 +84,14 @@ jobs:
           }
           echo "E2E test passed"
 
-      - name: Save Docker image to file
-        run: docker save feature-flags-api -o feature-flags-api.tar
+      # - name: Save Docker image to file
+      #   run: docker save feature-flags-api -o feature-flags-api.tar
 
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: feature-flags-api.tar
+      # - name: Upload image artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: docker-image
+      #     path: feature-flags-api.tar
 
   version:
     needs: [unit_test, e2e_test]
@@ -132,13 +132,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Download image artifact
-        uses: actions/download-artifact@v4
-        with:
-         name: docker-image
+      # - name: Download image artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #    name: docker-image
 
-      - name: Load Docker image
-        run: docker load -i feature-flags-api.tar
+      # - name: Load Docker image
+      #   run: docker load -i feature-flags-api.tar
 
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -148,6 +148,13 @@ jobs:
 
       - name: Authenticate Docker to ECR
         run: aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+      - name: Build and Tag Docker image for ECR & GHCR
+        run: |
+          set -euo pipefail
+       
+          docker compose -f docker-compose.local.yaml build feature-flags-api && \
+          docker tag feature-flags-api:latest feature-flags-api:${{ needs.version.outputs.image_tag }}
 
       - name: Tag Docker image for ECR
         run: |
