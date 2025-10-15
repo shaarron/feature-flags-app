@@ -44,10 +44,16 @@ class FeatureFlagStorage:
             mongo_root_password = os.environ.get('MONGO_INITDB_ROOT_PASSWORD')
             mongo_root_database = os.environ.get('MONGO_INITDB_DATABASE')
             mongo_host = os.environ.get('MONGO_HOST','localhost')
+            is_replica_set = os.environ.get('MONGO_REPLICA_SET', 'false')
+
             # Try authenticated connection if credentials are provided
-            if mongo_root_password:
-                mongo_uri = f"mongodb://root1:{mongo_root_password}@{mongo_host}:27017/?replicaSet=mongo&authSource=admin&authMechanism=SCRAM-SHA-256"
-                print(mongo_uri)
+            if mongo_root_password and mongo_root_username:
+                base = f"mongodb://{mongo_root_username}:{mongo_root_password}@{mongo_host}:27017/"
+                if is_replica_set == 'true':
+                    mongo_uri = base + "?replicaSet=mongo&authSource=admin&authMechanism=SCRAM-SHA-256"
+                    logger.info("Connecting to MongoDB with replica set")
+                else:
+                    mongo_uri = base + "?authSource=admin"
             else:
                 # Fallback to localhost without authentication
                 mongo_uri ='mongodb://localhost:27017/'
