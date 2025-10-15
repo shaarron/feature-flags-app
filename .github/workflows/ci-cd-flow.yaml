@@ -153,7 +153,7 @@ jobs:
         run: |
           set -euo pipefail
        
-          docker compose -f docker-compose.local.yaml build feature-flags-api && \
+          docker compose -f docker-compose.local.yaml build && \
           docker tag feature-flags-api:latest feature-flags-api:${{ needs.version.outputs.image_tag }}
 
       - name: Tag Docker image for ECR
