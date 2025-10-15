@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify, redirect, url_for, g
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
@@ -7,8 +7,24 @@ from flask_cors import CORS
 import json
 import uuid
 from datetime import datetime
+from prometheus_flask_exporter import PrometheusMetrics
+import logging
+import sys
+import time
+from pythonjsonlogger import jsonlogger
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logHandler = logging.StreamHandler(sys.stdout)
+formatter = jsonlogger.JsonFormatter(
+    "%(asctime)s %(levelname)s %(name)s %(message)s"
+)
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+
 
 # Database connection and fallback storage
 class FeatureFlagStorage:
@@ -29,8 +45,9 @@ class FeatureFlagStorage:
             mongo_root_database = os.environ.get('MONGO_INITDB_DATABASE')
             mongo_host = os.environ.get('MONGO_HOST','localhost')
             # Try authenticated connection if credentials are provided
-            if mongo_root_username and mongo_root_password:
-                mongo_uri = f"mongodb://{mongo_root_username}:{mongo_root_password}@{mongo_host}:27017/{mongo_root_database}?authSource=admin"
+            if mongo_root_password:
+                mongo_uri = f"mongodb://root1:{mongo_root_password}@{mongo_host}:27017/?replicaSet=mongo&authSource=admin&authMechanism=SCRAM-SHA-256"
+                print(mongo_uri)
             else:
                 # Fallback to localhost without authentication
                 mongo_uri ='mongodb://localhost:27017/'
@@ -41,17 +58,17 @@ class FeatureFlagStorage:
             self.db = self.client.feature_flags_db
             self.collection = self.db.flags
             self.mongo_available = True
-            print("MongoDB connection established successfully!")
+            logger.info("MongoDB connection established successfully!")
         except Exception as e:
-            print(f"MongoDB connection failed: {e}")
-            print("Falling back to in-memory storage")
+            logger.error(f"MongoDB connection failed: {e}")
+            logger.info("Falling back to in-memory storage")
             self.mongo_available = False
     
     def _seed_fallback_data(self):
         """Initialize fallback storage as empty list"""
         if not self.mongo_available:
             self.fallback_storage = []
-            print("Fallback storage initialized (empty - no default flags)")
+            logger.info("Fallback storage initialized (empty - no default flags)")
     
     def insert_one(self, document):
         """Insert a document into storage"""
@@ -61,7 +78,7 @@ class FeatureFlagStorage:
                 document['_id'] = str(result.inserted_id)
                 return result
             except Exception as e:
-                print(f"MongoDB insert failed, using fallback: {e}")
+                logger.info(f"MongoDB insert failed, using fallback: {e}")
                 self.mongo_available = False
         
         # Fallback to in-memory storage
@@ -75,7 +92,7 @@ class FeatureFlagStorage:
             try:
                 return self.collection.find(query or {})
             except Exception as e:
-                print(f"MongoDB find failed, using fallback: {e}")
+                logger.info(f"MongoDB find failed, using fallback: {e}")
                 self.mongo_available = False
         
         # Fallback to in-memory storage
@@ -94,7 +111,7 @@ class FeatureFlagStorage:
             try:
                 return self.collection.find_one(query)
             except Exception as e:
-                print(f"MongoDB find_one failed, using fallback: {e}")
+                logger.info(f"MongoDB find_one failed, using fallback: {e}")
                 self.mongo_available = False
         
         # Fallback to in-memory storage
@@ -109,7 +126,7 @@ class FeatureFlagStorage:
             try:
                 return self.collection.update_one(query, update)
             except Exception as e:
-                print(f"MongoDB update failed, using fallback: {e}")
+                logger.info(f"MongoDB update failed, using fallback: {e}")
                 self.mongo_available = False
         
         # Fallback to in-memory storage
@@ -127,7 +144,7 @@ class FeatureFlagStorage:
             try:
                 return self.collection.delete_one(query)
             except Exception as e:
-                print(f"MongoDB delete failed, using fallback: {e}")
+                logger.info(f"MongoDB delete failed, using fallback: {e}")
                 self.mongo_available = False
         
         # Fallback to in-memory storage
@@ -146,10 +163,11 @@ if storage.mongo_available:
     try:
         # Check if collection already has data
         existing_flags = list(feature_flags_collection.find())
+
         if existing_flags:
-            print(f"Database already contains {len(existing_flags)} feature flags. Skipping seeding.")
+            logger.info(f"Database already contains {len(existing_flags)} feature flags. Skipping seeding.")
         else:
-            print("Seeding database with environment-based feature flags...")
+            logger.info("Seeding database with environment-based feature flags...")
             # Insert flags with predefined environment-specific values
             flag_configs = [
                 {
@@ -211,11 +229,28 @@ if storage.mongo_available:
             for flag_config in flag_configs:
                 feature_flags_collection.insert_one(flag_config)
             
-            print("Database seeding completed successfully!")
+            logger.info("Database seeding completed successfully!")
     except Exception as e:
-        print(f"Error during seeding: {e}")
+        logger.error(f"Error during seeding: {e}")
         # Ignore seeding errors at startup
         pass
+
+@app.before_request
+def start_timer():
+    g.start_time = time.time()
+
+@app.after_request
+def log_request(response):
+    latency_ms = int((time.time() - g.start_time) * 1000)
+    logger.info({
+        "event": "api_request",
+        "method": request.method,
+        "path": request.path,
+        "status": response.status_code,
+        "latency_ms": latency_ms,
+        "client_ip": request.remote_addr
+    })
+    return response
 
 # Routes
 @app.route('/flags', methods=['POST'])
@@ -355,4 +390,4 @@ def toggle_flag(id):
     return jsonify({"error": "Feature flag not found"}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
