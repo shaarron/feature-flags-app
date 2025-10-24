@@ -161,3 +161,4 @@ searchBox.addEventListener('input', () => {
 });
 
 window.addEventListener('DOMContentLoaded', loadFlags);
+
