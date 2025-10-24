@@ -44,8 +44,7 @@ services:
         condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./static:/usr/share/nginx/html/static
-      - ./templates:/usr/share/nginx/html/templates
+      - ./frontend:/usr/share/nginx/html
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost || exit 1" ]
       interval: 10s

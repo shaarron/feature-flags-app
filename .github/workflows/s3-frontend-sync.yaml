@@ -1,0 +1,41 @@
+name: Sync frontend changes to S3
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**' 
+
+jobs:
+  sync-to-s3:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # for OIDC
+      contents: read  # to checkout code
+
+    env:
+      AWS_REGION: ap-south-1
+      S3_BUCKET_URL: ${{ vars.S3_FRONTEND_BUCKET_URL }}       
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::869432184848:role/gha-oidc-deploy
+          aws-region: ${{ env.AWS_REGION }}
+    
+      - name: Sync frontend to S3
+        run: |
+          aws s3 sync frontend/ ${{ env.S3_BUCKET_URL}} \
+            --delete \
+            --cache-control "public, max-age=0" \
+            --exclude ".git/*"
+
+      # optional: add cloudfront invalidation step here - find out how to get distribution id from bucket name or pass as variable
