@@ -1,11 +1,62 @@
-# Feature Flags Service
+# Feature Flags App
 
-A lightweight **Feature Flags Service** built with **Flask** and **MongoDB**,  
+A lightweight **Feature Flags App** built with **Flask** and **MongoDB**,  
 This app lets you create, update, toggle, and delete feature flags across multiple environments (`development`, `staging`, `production`).  
 
-### CI/CD 
-This repository includes a **GitHub Actions workflow** that automates testing, versioning, and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
+### Repositories Structure
+This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
+1. **Infrastructure** Repository **([feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure))**  
+* Contains Terraform code for provisioning all AWS resources to eventualy run this app on the cloud.(VPC, EKS, S3, CloudFront, Route53, etc.).
+2. **Resources** Repository **([feature-flags-resources](https://github.com/shaarron/feature-flags-resources))** 
+* Holds Helm charts and Argo CD Applications that define the Kubernetes manifests. 
+* Implements GitOps: Argo CD watches this repo and syncs changes to the EKS cluster.
+1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<<Current Repo**
+  * Contains the Feature Flags API and its Dockerfile, along with CI workflows to build and push container images to ECR/GHCR, and sync s3 bucket with frontend files.
 
+* The built images are deployed through Argo CD using manifests from the resources repo.
+
+
+## Table of Contents
+
+- [Feature Flags App](#feature-flags-app)
+    - [Repositories Structure](#repositories-structure)
+  - [Table of Contents](#table-of-contents)
+  - [Github Actions](#github-actions)
+    - [ci-cd-flow](#ci-cd-flow)
+    - [s3-frontend-sync](#s3-frontend-sync)
+  - [Architecture](#architecture)
+    - [Service Architecture](#service-architecture)
+    - [Docker Compose Architecture](#docker-compose-architecture)
+    - [Full Flow Architecture](#full-flow-architecture)
+  - [API Documentation](#api-documentation)
+    - [Endpoints](#endpoints)
+      - [1. Create a Feature Flag](#1-create-a-feature-flag)
+        - [Request Body:](#request-body)
+      - [2. Get All Flags](#2-get-all-flags)
+      - [3. Get a Single Flag](#3-get-a-single-flag)
+        - [4. Update a Flag](#4-update-a-flag)
+        - [5. Delete a Flag](#5-delete-a-flag)
+      - [6. Toggle a Flag](#6-toggle-a-flag)
+  - [Observabillity](#observabillity)
+    - [Monitoring](#monitoring)
+    - [Logging](#logging)
+  - [Requirements](#requirements)
+  - [Running locally](#running-locally)
+    - [Using Docker Compose](#using-docker-compose)
+    - [Running APP as a standalone (no DB): Using Python Virtual Environment](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
+
+## Github Actions
+
+### [ci-cd-flow](.github/workflows/ci-cd-flow.yaml) 
+This GitHub Actions workflow automates testing, versioning, and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
+
+
+### [s3-frontend-sync](.github/workflows/s3-frontend-sync.yaml)
+
+This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
+
+ *it can be triggered manually as well.
+for a first sync.
 
 ## Architecture 
 
@@ -60,7 +111,140 @@ The `docker-compose.yml` file orchestrates the following services:
 ![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
 
 
+## API Documentation
 
+### Endpoints
+  
+#### 1. Create a Feature Flag
+```
+POST /flags 
+```
+##### Request Body:
+
+```sh
+{
+  "name": "dark-mode",
+  "description": "Enable dark theme for all users",
+  "environments": {
+    "development": true,
+    "staging": true,
+    "production": false
+  }
+}
+```
+**Response (201)
+**
+```sh
+{
+  "_id": "abc123",
+  "name": "dark-mode",
+  "description": "Enable dark theme for all users",
+  "environments": {...}
+}
+```
+
+#### 2. Get All Flags
+
+```
+GET /flags?environment=staging
+```
+
+Retrieves all feature flags, with an `enabled` field for the selected environment.
+
+**Response**
+```sh
+[
+  {
+    "_id": "abc123",
+    "name": "dark-mode",
+    "description": "Enable dark theme for all users",
+    "environments": {...},
+    "enabled": true
+  }
+]
+```
+
+#### 3. Get a Single Flag
+```
+GET /flags/<id>
+```
+
+Fetches a specific feature flag by ID.
+
+**Response**
+```sh
+{
+  "_id": "abc123",
+  "name": "dark-mode",
+  "description": "Enable dark theme for all users",
+  "environments": {...}
+}
+```
+
+##### 4. Update a Flag
+```
+PUT /flags/<id>
+```
+Updates name, description, or environment states.
+
+**Request Body** (partial update allowed):
+```sh
+{
+  "description": "Enable dark mode toggle for users"
+}
+```
+
+ **Response**
+```sh
+{
+  "_id": "abc123",
+  "name": "dark-mode",
+  "description": "Enable dark mode toggle for users",
+  "environments": {...}
+}
+```
+
+##### 5. Delete a Flag
+```
+DELETE /flags/<id>
+```
+Deletes a feature flag.
+
+**Response (204):**
+```sh
+{
+  "message": "Feature flag deleted"
+}
+```
+
+#### 6. Toggle a Flag
+```
+POST /flags/<id>/toggle
+```
+Toggles a flag’s enabled state in a given environment.
+
+**Request Body:**
+```sh
+{
+  "environment": "production"
+}
+```
+
+**Response (200)**
+```sh
+{
+  "_id": "abc123",
+  "name": "dark-mode",
+  "enabled": true
+}
+```
+
+## Observabillity 
+### Monitoring
+
+Prometheus metrics: available at **/metrics**
+### Logging 
+Structured logs: JSON format with latency, method, status, and path.
 ## Requirements
 
 - **Python 3.9+**
@@ -109,7 +293,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The application will be availble at http://localhost:5000
+The application will be available at http://localhost:5000
 
 
 
