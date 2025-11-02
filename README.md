@@ -6,14 +6,14 @@ This app lets you create, update, toggle, and delete feature flags across multip
 ### Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
 1. **Infrastructure** Repository **([feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure))**  
-* Contains Terraform code for provisioning all AWS resources to eventualy run this app on the cloud.(VPC, EKS, S3, CloudFront, Route53, etc.).
+   * Contains Terraform code for provisioning all AWS resources to eventualy run this app on the cloud.(VPC, EKS, S3, CloudFront, Route53, etc.).
 2. **Resources** Repository **([feature-flags-resources](https://github.com/shaarron/feature-flags-resources))** 
-* Holds Helm charts and Argo CD Applications that define the Kubernetes manifests. 
-* Implements GitOps: Argo CD watches this repo and syncs changes to the EKS cluster.
-1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<<Current Repo**
-  * Contains the Feature Flags API and its Dockerfile, along with CI workflows to build and push container images to ECR/GHCR, and sync s3 bucket with frontend files.
+   * Holds Helm charts and Argo CD Applications that define the Kubernetes manifests. 
+   * Implements GitOps: Argo CD watches this repo and syncs changes to the EKS cluster.
+ 3. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<--Current Repo**
+     * Contains the Feature Flags API and its Dockerfile, along with CI workflows to build and push container images to ECR/GHCR, and sync s3 bucket with frontend files.
 
-* The built images are deployed through Argo CD using manifests from the resources repo.
+      * The built images are deployed through Argo CD using manifests from the resources repo.
 
 
 ## Table of Contents
