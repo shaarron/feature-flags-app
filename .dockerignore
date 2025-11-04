@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+venv
+.venv
+env
+.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation
+README.md
+*.md
+docs
+
+# CI/CD
+.github
+
+# Frontend (not needed for backend image)
+frontend
+
+# Docker
+docker-compose*.yaml
+Dockerfile*
+
+# Tests and logs
+*.log
+.coverage
+htmlcov
+.pytest_cache
+
+# Other
+.DS_Store
+nginx.conf
