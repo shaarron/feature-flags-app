@@ -28,6 +28,7 @@ This project is split into three repositories, each with a specific role in the 
     - [Service Architecture](#service-architecture)
     - [Docker Compose Architecture](#docker-compose-architecture)
     - [Full Flow Architecture](#full-flow-architecture)
+    - [VPC Architecture](#vpc-architecture)
   - [API Documentation](#api-documentation)
     - [Endpoints](#endpoints)
       - [1. Create a Feature Flag](#1-create-a-feature-flag)
@@ -109,6 +110,10 @@ The `docker-compose.yml` file orchestrates the following services:
 ### Full Flow Architecture
 
 ![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
+
+### VPC Architecture
+
+![feature-flags-full-architecture](/ff-vpc-diagram.svg)
 
 
 ## API Documentation
