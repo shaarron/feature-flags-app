@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: shaarron/feature-flags-infrastructure shaarron/feature-flags-infrastructure
+          repository: shaarron/feature-flags-infrastructure
           token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Configure AWS credentials using OIDC
