@@ -19,9 +19,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: shaarron/feature-flags-infrastructure
+          repository: shaarron/feature-flags-infrastructure https://github.com/shaarron/feature-flags-infrastructure
           token: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::869432184848:role/gha-oidc-deploy
+          aws-region: ap-south-1
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
