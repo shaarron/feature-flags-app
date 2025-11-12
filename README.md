@@ -1,63 +1,57 @@
 # Feature Flags App
 
-A lightweight **Feature Flags App** built with **Flask** and **MongoDB**,  
+A lightweight **Feature Flags App** built with **Python** (**Flask**), **MongoDB** and a frontend using HTML, CSS, and JavaScript.
+
 This app lets you create, update, toggle, and delete feature flags across multiple environments (`development`, `staging`, `production`).  
 
 ### Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
-1. **Infrastructure** Repository **([feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure))**  
-   * Contains Terraform code for provisioning all AWS resources to eventualy run this app on the cloud.(VPC, EKS, S3, CloudFront, Route53, etc.).
-2. **Resources** Repository **([feature-flags-resources](https://github.com/shaarron/feature-flags-resources))** 
+
+ 1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<--Current Repo**
+     * Contains the Feature Flags API & UI 
+     * Github actions
+
+2. **Infrastructure** Repository **([feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure))**  
+   * Contains Terraform code for provisioning the required AWS resources (VPC, EKS, S3, CloudFront, Route53, etc.).
+3. **Resources** Repository **([feature-flags-resources](https://github.com/shaarron/feature-flags-resources))** 
    * Holds Helm charts and Argo CD Applications that define the Kubernetes manifests. 
    * Implements GitOps: Argo CD watches this repo and syncs changes to the EKS cluster.
- 3. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<--Current Repo**
-     * Contains the Feature Flags API and its Dockerfile, along with CI workflows to build and push container images to ECR/GHCR, and sync s3 bucket with frontend files.
-
-      * The built images are deployed through Argo CD using manifests from the resources repo.
 
 
+  
 ## Table of Contents
 
-- [Feature Flags App](#feature-flags-app)
-    - [Repositories Structure](#repositories-structure)
-  - [Table of Contents](#table-of-contents)
-  - [Github Actions](#github-actions)
-    - [ci-cd-flow](#ci-cd-flow)
-    - [s3-frontend-sync](#s3-frontend-sync)
-  - [Architecture](#architecture)
+  - [**Github Actions**](#github-actions)
+    - [Feature Flags CI/CD](#feature-flags-cicd)
+    - [Feature Flags Infrastructure ](#feature-flags-infrastructure)
+    - [Sync Frontend to S3](#sync-frontend-to-s3)
+
+  - [**Architecture**](#architecture)
     - [Service Architecture](#service-architecture)
     - [Docker Compose Architecture](#docker-compose-architecture)
     - [Full Flow Architecture](#full-flow-architecture)
     - [VPC Architecture](#vpc-architecture)
-  - [API Documentation](#api-documentation)
-    - [Endpoints](#endpoints)
-      - [1. Create a Feature Flag](#1-create-a-feature-flag)
-        - [Request Body:](#request-body)
-      - [2. Get All Flags](#2-get-all-flags)
-      - [3. Get a Single Flag](#3-get-a-single-flag)
-        - [4. Update a Flag](#4-update-a-flag)
-        - [5. Delete a Flag](#5-delete-a-flag)
-      - [6. Toggle a Flag](#6-toggle-a-flag)
+
   - [Observabillity](#observabillity)
     - [Monitoring](#monitoring)
     - [Logging](#logging)
-  - [Requirements](#requirements)
   - [Running locally](#running-locally)
     - [Using Docker Compose](#using-docker-compose)
-    - [Running APP as a standalone (no DB): Using Python Virtual Environment](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
-
+    - [Running app as a standalone](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
+  - **[API Documentation](#api-documentation)**
 ## Github Actions
 
-### [ci-cd-flow](.github/workflows/ci-cd-flow.yaml) 
+### [Feature Flags CI/CD](.github/workflows/feature-flags-ci-cd.yaml) 
 This GitHub Actions workflow automates testing, versioning, and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
 
 
-### [s3-frontend-sync](.github/workflows/s3-frontend-sync.yaml)
+### [Sync Frontend to S3](.github/workflows/s3-frontend-sync.yaml)
 
 This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
 
- *it can be triggered manually as well.
-for a first sync.
+### [Feature Flags Infrastructure](.github/workflows/feature-flags-infrastructure.yaml)
+
+This workflow runs Terraform from the **[feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure)** repository to provision AWS infrastructure resources.
 
 ## Architecture 
 
@@ -66,14 +60,36 @@ for a first sync.
 **API**:
    - Acts as the core API server for managing feature flags.
    - Provides endpoints for creating, updating, toggling, and deleting feature flags.
-   - Includes environment-specific configurations for `development`, `staging`, and `production`.
+   - Includes environment-specific configurations for `dev`, `staging`, `prod`.
 
- **DB**:
+ **MongoDB**:
    - Serves as the persistent storage for feature flags.
-   - Stores data in collections, with support for indexing and querying.
-   - If DB is unavailable, the app falls back to an in-memory storage option.
 
-### Docker Compose Architecture
+**Frontend**:
+   - Static, Stored in S3 and served via CloudFront.
+
+### Full Flow Architecture
+
+![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
+
+### VPC Architecture - High Availability
+
+![feature-flags-full-architecture](/ff-vpc-diagram.svg)
+
+
+
+## Observabillity 
+### Monitoring
+
+Prometheus metrics: available at **/metrics**
+### Logging 
+Structured logs: JSON format with latency, method, status, and path.
+
+## Running locally
+
+### Using Docker Compose
+
+#### Docker Compose architecture 
 
 The `docker-compose.yml` file orchestrates the following services:
 
@@ -104,16 +120,51 @@ The `docker-compose.yml` file orchestrates the following services:
     - **Config mounts** (./nginx.conf, ./static, ./templates) are shared with the Nginx service for configuration and static asset serving.
 
 
-
 ![dokcer-compose-architecture](/docker-compose-architecture.svg)
 
-### Full Flow Architecture
 
-![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
+#### Instructions 
+```bash
+git clone https://github.com/shaarron/feature-flags-app.git
 
-### VPC Architecture
+cd feature-flags-app
 
-![feature-flags-full-architecture](/ff-vpc-diagram.svg)
+
+# Create environment file (optional - defaults will be used if not provided)
+cat > .env << EOF
+MONGO_INITDB_DATABASE=
+MONGO_INITDB_ROOT_USERNAME=
+MONGO_INITDB_ROOT_PASSWORD=
+EOF
+
+# Start all services
+docker compose -f docker-compose.local.yaml up -d
+```
+
+The application will be available at:
+- **Web Interface**: http://localhost
+- **API**: http://localhost/flags
+- **MongoDB**: localhost:27017
+
+
+### Running app as a standalone (no DB): Using Python Virtual Environment
+
+```bash
+git clone https://github.com/shaarron/feature-flags-app.git
+cd feature-flags-app
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate 
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python app.py
+```
+
+The application will be available at http://localhost:5000
 
 
 ## API Documentation
@@ -243,63 +294,5 @@ Toggles a flag’s enabled state in a given environment.
   "enabled": true
 }
 ```
-
-## Observabillity 
-### Monitoring
-
-Prometheus metrics: available at **/metrics**
-### Logging 
-Structured logs: JSON format with latency, method, status, and path.
-## Requirements
-
-- **Python 3.9+**
-- **MongoDB** (optional – falls back to in-memory storage if not available)
-
-## Running locally
-
-
-### Using Docker Compose
-
-```bash
-git clone https://github.com/your-username/feature-flags-service.git
-cd feature-flags-service
-
-# Create environment file (optional - defaults will be used if not provided)
-cat > .env << EOF
-MONGO_INITDB_DATABASE=
-MONGO_INITDB_ROOT_USERNAME=
-MONGO_INITDB_ROOT_PASSWORD=
-EOF
-
-# Start all services
-docker compose -f docker-compose.local.yaml up -d
-```
-
-The application will be available at:
-- **Web Interface**: http://localhost
-- **API**: http://localhost/flags
-- **MongoDB**: localhost:27017
-
-
-### Running APP as a standalone (no DB): Using Python Virtual Environment
-
-```bash
-git clone https://github.com/your-username/feature-flags-service.git
-cd feature-flags-service
-
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate 
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
-python app.py
-```
-
-The application will be available at http://localhost:5000
-
-
 
 

@@ -1,4 +1,4 @@
-name: Feature Flags ci/cd flow
+name: Feature Flags CI/CD
 
 on:
   # Run tests on pull requests (no deploy)
