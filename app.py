@@ -12,6 +12,7 @@ import logging
 import sys
 import time
 from pythonjsonlogger import jsonlogger
+import traceback
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
@@ -145,7 +146,7 @@ class FeatureFlagStorage:
         return type('Result', (), {'matched_count': 0, 'modified_count': 0})()
     
     def delete_one(self, query):
-        """Delete one document from storage"""
+        # Delete one document from storage
         if self.mongo_available:
             try:
                 return self.collection.delete_one(query)
@@ -258,6 +259,27 @@ def log_request(response):
     })
     return response
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Capture the full stack trace
+    tb = traceback.format_exc()
+    
+    logger.error({
+        "event": "unhandled_exception",
+        "error_type": type(e).__name__,
+        "error_message": str(e),
+        "traceback": tb,
+        "path": request.path,
+        "method": request.method,
+        "client_ip": request.remote_addr
+    })
+    
+    # Return a 500 response
+    return jsonify({
+        "error": "Internal Server Error", 
+        "message": "An unexpected error occurred"
+    }), 500
+
 # Routes
 @app.route('/flags', methods=['POST'])
 def create_flag():
@@ -329,7 +351,6 @@ def update_flag(id):
     if not update_fields:
         return jsonify({"error": "No fields to update"}), 400
 
-    # Handle both MongoDB ObjectId and fallback string IDs
     if storage.mongo_available:
         try:
             query = {"_id": ObjectId(id)}
@@ -347,7 +368,6 @@ def update_flag(id):
 
 @app.route('/flags/<id>', methods=['DELETE'])
 def delete_flag(id):
-    # Handle both MongoDB ObjectId and fallback string IDs
     if storage.mongo_available:
         try:
             query = {"_id": ObjectId(id)}
@@ -366,7 +386,6 @@ def toggle_flag(id):
     data = request.get_json()
     environment = data.get('environment', 'staging')
     
-    # Handle both MongoDB ObjectId and fallback string IDs
     if storage.mongo_available:
         try:
             query = {"_id": ObjectId(id)}
