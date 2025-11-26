@@ -3,7 +3,6 @@ services:
     build: .
     image: feature-flags-api
     environment:
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - MONGO_HOST=db
@@ -22,7 +21,6 @@ services:
   db:
     image: mongo:6.0
     environment:
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     healthcheck:

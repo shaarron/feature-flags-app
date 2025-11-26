@@ -8,7 +8,6 @@ on:
     paths-ignore:
       - 'frontend/**'
       - '**.md'
-      - '.github/**'
       - '.dockerignore'
 
   # Run full pipeline with deploy on main pushes
@@ -18,7 +17,6 @@ on:
     paths-ignore:
       - 'frontend/**'
       - '**.md'
-      - '.github/**'
       - '.dockerignore'
 
   workflow_dispatch:
@@ -166,6 +164,10 @@ jobs:
 
       - name: Authenticate Docker to ECR
         run: aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+      
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and Tag Docker image for ECR & GHCR
         run: |

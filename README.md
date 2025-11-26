@@ -132,7 +132,6 @@ cd feature-flags-app
 
 # Create environment file (optional - defaults will be used if not provided)
 cat > .env << EOF
-MONGO_INITDB_DATABASE=
 MONGO_INITDB_ROOT_USERNAME=
 MONGO_INITDB_ROOT_PASSWORD=
 EOF
