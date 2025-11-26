@@ -43,7 +43,6 @@ class FeatureFlagStorage:
         try:
             mongo_root_username = os.environ.get('MONGO_INITDB_ROOT_USERNAME')
             mongo_root_password = os.environ.get('MONGO_INITDB_ROOT_PASSWORD')
-            mongo_root_database = os.environ.get('MONGO_INITDB_DATABASE')
             mongo_host = os.environ.get('MONGO_HOST','localhost')
             is_replica_set = os.environ.get('MONGO_REPLICA_SET', 'false')
 
