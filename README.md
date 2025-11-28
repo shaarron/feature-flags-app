@@ -4,15 +4,18 @@ A lightweight **Feature Flags App** built with **Python** (**Flask**), **MongoDB
 
 This app lets you create, update, toggle, and delete feature flags across multiple environments (`development`, `staging`, `production`).  
 
+<img src="feature-flags-web-demo.png" alt="feature-flags-web-demo" width="1000">
+
 ### Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
 
  1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<--Current Repo**
      * Contains the Feature Flags API & UI 
-     * Github actions
+     * Contains the GitHub Actions workflows to build the feature-flags-app image & sync frontend s3 bucket 
 
 2. **Infrastructure** Repository **([feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure))**  
    * Contains Terraform code for provisioning the required AWS resources (VPC, EKS, S3, CloudFront, Route53, etc.).
+   * Contains the GitHub Actions workflow to apply the terraform
 3. **Resources** Repository **([feature-flags-resources](https://github.com/shaarron/feature-flags-resources))** 
    * Holds Helm charts and Argo CD Applications that define the Kubernetes manifests. 
    * Implements GitOps: Argo CD watches this repo and syncs changes to the EKS cluster.
@@ -23,7 +26,6 @@ This project is split into three repositories, each with a specific role in the 
 
   - [**Github Actions**](#github-actions)
     - [Feature Flags CI/CD](#feature-flags-cicd)
-    - [Feature Flags Infrastructure ](#feature-flags-infrastructure)
     - [Sync Frontend to S3](#sync-frontend-to-s3)
 
   - [**Architecture**](#architecture)
@@ -32,13 +34,13 @@ This project is split into three repositories, each with a specific role in the 
     - [Full Flow Architecture](#full-flow-architecture)
     - [VPC Architecture](#vpc-architecture)
 
-  - [Observabillity](#observabillity)
+  - [**Observabillity**](#observabillity)
     - [Monitoring](#monitoring)
     - [Logging](#logging)
-  - [Running locally](#running-locally)
+  - [**Running locally**](#running-locally)
     - [Using Docker Compose](#using-docker-compose)
     - [Running app as a standalone](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
-  - **[API Documentation](#api-documentation)**
+  - [**API Documentation**](#api-documentation)
 ## Github Actions
 
 ### [Feature Flags CI/CD](.github/workflows/feature-flags-ci-cd.yaml) 
