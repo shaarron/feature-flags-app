@@ -51,10 +51,6 @@ This GitHub Actions workflow automates testing, versioning, and publishing of th
 
 This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
 
-### [Feature Flags Infrastructure](.github/workflows/feature-flags-infrastructure.yaml)
-
-This workflow runs Terraform from the **[feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure)** repository to provision AWS infrastructure resources.
-
 ## Architecture 
 
 ### Service Architecture 
