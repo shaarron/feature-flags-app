@@ -69,7 +69,6 @@ jobs:
 
       - name: Run docker compose up
         env:
-          MONGO_INITDB_DATABASE: ${{ env.MONGO_INITDB_DATABASE }}
           MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
         run: docker compose -f docker-compose.local.yaml up -d --wait --build
@@ -98,6 +97,8 @@ jobs:
           }
           echo "E2E test passed"
 
+      ## Commented out artifact step due to free tier storage limits,
+      ## Left here for demonstration purposes    
       # - name: Save Docker image to file
       #   run: docker save feature-flags-api -o feature-flags-api.tar
 
@@ -147,7 +148,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-
+      ## Commented out artifact step due to free tier storage limits,
+      ## Left here for demonstration purposes
       # - name: Download image artifact
       #   uses: actions/download-artifact@v4
       #   with:

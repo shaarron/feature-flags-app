@@ -27,12 +27,14 @@ This project is split into three repositories, each with a specific role in the 
   - [**Github Actions**](#github-actions)
     - [Feature Flags CI/CD](#feature-flags-cicd)
     - [Sync Frontend to S3](#sync-frontend-to-s3)
+    - [Required Secrets & Variables](#required-secrets--variables)
 
   - [**Architecture**](#architecture)
     - [Service Architecture](#service-architecture)
-    - [Docker Compose Architecture](#docker-compose-architecture)
     - [Full Flow Architecture](#full-flow-architecture)
-    - [VPC Architecture](#vpc-architecture)
+    - [VPC Architecture](#vpc-architecture---high-availability)
+    - [Docker Compose Architecture](#docker-compose-architecture)
+
 
   - [**Observabillity**](#observabillity)
     - [Monitoring](#monitoring)
@@ -43,13 +45,48 @@ This project is split into three repositories, each with a specific role in the 
   - [**API Documentation**](#api-documentation)
 ## Github Actions
 
-### [Feature Flags CI/CD](.github/workflows/feature-flags-ci-cd.yaml) 
+### [Feature Flags CI/CD](.github/workflows/feature-flags-ci-cd.yaml)
 This GitHub Actions workflow automates testing, versioning, and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
 
 
 ### [Sync Frontend to S3](.github/workflows/s3-frontend-sync.yaml)
 
 This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
+
+### Required Secrets & Variables
+
+To run these workflows, configure the following secrets and variables in your GitHub repository settings.
+
+#### Required Secrets
+
+Navigate to **Settings → Secrets and variables → Actions → Repository secrets**:
+
+| Secret Name | Description | Used In |
+|------------|-------------|---------|
+| `MONGO_INITDB_ROOT_USERNAME` | MongoDB root username | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+| `MONGO_INITDB_ROOT_PASSWORD` | MongoDB root password | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+
+**Note**: `GITHUB_TOKEN` is automatically provided by GitHub Actions and doesn't need manual configuration.
+
+#### Required Variables
+
+Navigate to **Settings → Secrets and variables → Actions → Repository variables**:
+
+| Variable Name | Description | Example Value | Used In |
+|--------------|-------------|---------------|---------|
+| `ECR_REGISTRY` | AWS ECR registry URL | `888432181118.dkr.ecr.ap-south-1.amazonaws.com` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+| `ECR_REPO` | ECR repository name | `feature-flags-api` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+| `S3_FRONTEND_BUCKET_URL` | S3 bucket URL for frontend files | `s3://your-bucket-name` | [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
+
+#### AWS OIDC Configuration
+
+Both workflows use AWS OIDC for authentication.
+
+Create the oidc using terraform from `/oidc` directory in **[feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure/tree/main)** repo
+
+Or create it manually - for more details on setting up AWS OIDC with GitHub Actions, see the [AWS documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
+
+
 
 ## Architecture 
 
