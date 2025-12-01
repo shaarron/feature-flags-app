@@ -69,8 +69,8 @@ jobs:
 
       - name: Run docker compose up
         env:
-          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} 
+          MONGO_INITDB_ROOT_USERNAME: test-admin
+          MONGO_INITDB_ROOT_PASSWORD: test-password
         run: docker compose -f docker-compose.local.yaml up -d --wait --build
 
       - name: Verify containers
@@ -136,6 +136,7 @@ jobs:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
       ECR_REPO: ${{ vars.ECR_REPO }}
       GHCR: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
     needs: version
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -161,11 +162,11 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::869432184848:role/gha-oidc-deploy
-          aws-region: ap-south-1
+          role-to-assume: ${{ secrets.OIDC_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Authenticate Docker to ECR
-        run: aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+        run: aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
       
       - name: Login to ECR
         id: login-ecr

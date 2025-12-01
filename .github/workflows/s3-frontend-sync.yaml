@@ -17,7 +17,7 @@ jobs:
       contents: read 
 
     env:
-      AWS_REGION: ap-south-1
+      AWS_REGION: ${{ vars.AWS_REGION }}
       S3_BUCKET_URL: ${{ vars.S3_FRONTEND_BUCKET_URL }}       
   
     steps:
@@ -27,9 +27,9 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::869432184848:role/gha-oidc-deploy
+          role-to-assume: ${{ secrets.OIDC_AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-    
+
       - name: Sync frontend to S3
         run: |
           aws s3 sync frontend/ ${{ env.S3_BUCKET_URL}} \
