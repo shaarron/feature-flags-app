@@ -63,8 +63,7 @@ Navigate to **Settings → Secrets and variables → Actions → Repository secr
 
 | Secret Name | Description | Used In |
 |------------|-------------|---------|
-| `MONGO_INITDB_ROOT_USERNAME` | MongoDB root username | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
-| `MONGO_INITDB_ROOT_PASSWORD` | MongoDB root password | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+| `OIDC_AWS_ROLE_ARN` | AWS IAM role ARN for OIDC authentication | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
 
 **Note**: `GITHUB_TOKEN` is automatically provided by GitHub Actions and doesn't need manual configuration.
 
@@ -74,6 +73,7 @@ Navigate to **Settings → Secrets and variables → Actions → Repository vari
 
 | Variable Name | Description | Example Value | Used In |
 |--------------|-------------|---------------|---------|
+| `AWS_REGION` | AWS region where resources are deployed | `ap-south-1` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
 | `ECR_REGISTRY` | AWS ECR registry URL | `888432181118.dkr.ecr.ap-south-1.amazonaws.com` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
 | `ECR_REPO` | ECR repository name | `feature-flags-api` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
 | `S3_FRONTEND_BUCKET_URL` | S3 bucket URL for frontend files | `s3://your-bucket-name` | [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
@@ -114,11 +114,30 @@ Or create it manually - for more details on setting up AWS OIDC with GitHub Acti
 
 
 ## Observabillity 
+
+The application comes with pre-configured dashboards (available in the [**feature-flags-resources**](https://github.com/shaarron/feature-flags-resources) Repository) to provide immediate insight into the application health.
+
 ### Monitoring
 
-Prometheus metrics: available at **/metrics**
+
+#### [**Grafana Dashboard**](https://github.com/shaarron/feature-flags-resources?tab=readme-ov-file#grafana-dashboard-feature-flags-api-monitoring)
+
+The Grafana dashboard monitors the Feature Flags API by combining Flask application metrics with Kubernetes resource statistics to visualize traffic, performance, and system health. It tracks critical indicators such as HTTP request rates, 5xx error spikes, and p95 response latency, alongside pod CPU and memory usage to ensure optimal application stability.
+
+  <img src="grafana-dashboard-demo.png" alt="grafana-dashboard-demo" width=900>
+
 ### Logging 
-Structured logs: JSON format with latency, method, status, and path.
+
+
+#### [**Kibana Dashboard**](https://github.com/shaarron/feature-flags-resources?tab=readme-ov-file#kibana-dashboard-feature-flags-dashboard) 
+
+ The Kibana dashboard provides a centralized view of log data to track high-level log volume, service activity, and error trends. It highlights 5xx errors and application exceptions, offering breakdowns by service to help identify noisy components and analyze error distributions across the infrastructure.
+
+
+  <img src="kibana-dashboard-demo.png" alt="kibana-dashboard-demo" width=900>
+
+
+
 
 ## Running locally
 
