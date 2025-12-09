@@ -3,8 +3,6 @@ name: Feature Flags CI Pipeline
 on:
   pull_request:
     branches: [ main, dev, staging ]
-  push:
-    branches: [ 'feature/**' ]
     paths-ignore:
     - 'frontend/**'
     - '**.md'
