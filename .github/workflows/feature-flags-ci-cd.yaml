@@ -1,23 +1,24 @@
 name: Feature Flags CI/CD
 
 on:
-  # Run tests on pull requests (no deploy)
   pull_request:
     branches:
       - main
+      - dev
+      - staging
     paths-ignore:
       - 'frontend/**'
       - '**.md'
-      - '.dockerignore'
 
-  # Run full pipeline with deploy on main pushes
   push:
     branches:
-      - main
+      - 'feature/**'
+      - 'dev'
+      - 'staging'
+      - 'main'
     paths-ignore:
       - 'frontend/**'
       - '**.md'
-      - '.dockerignore'
 
   workflow_dispatch:
 
@@ -110,18 +111,19 @@ jobs:
 
   version:
     needs: [unit_test, e2e_test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging')
     permissions:
       contents: write
     runs-on: ubuntu-latest
     outputs:
-      image_tag: ${{ steps.version.outputs.new_tag }}
+      image_tag: ${{ steps.set_tag.outputs.tag }}
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Bump version and push tag
+      - name: Bump version and push tag(Main branch only)
+        if: github.ref == 'refs/heads/main'
         id: version
         uses: anothrNick/github-tag-action@1.64.0
         env:
@@ -131,14 +133,32 @@ jobs:
           FORCE_WITHOUT_CHANGES: "true"
           WITH_V: true
 
+      # Calculate the Image Tag for all branches
+      - name: Calculate Image Tag
+        id: set_tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=${{ steps.version.outputs.new_tag }}" >> $GITHUB_OUTPUT
+            
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "tag=rc-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            
+          else
+            echo "tag=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          fi
+
   publish:
     env:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
       ECR_REPO: ${{ vars.ECR_REPO }}
       GHCR: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
       AWS_REGION: ${{ vars.AWS_REGION }}
+      TAG: ${{ needs.version.outputs.image_tag }}
+
     needs: version
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging')    
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -177,17 +197,24 @@ jobs:
           set -euo pipefail
        
           docker compose -f docker-compose.local.yaml build && \
-          docker tag feature-flags-api:latest feature-flags-api:${{ needs.version.outputs.image_tag }}
+          docker tag feature-flags-api:latest feature-flags-api:$TAG 
 
       - name: Tag Docker image for ECR
         run: |
-          docker tag feature-flags-api $ECR_REGISTRY/$ECR_REPO:latest
-          docker tag feature-flags-api $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
+          docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:$TAG
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:latest
+          fi
 
       - name: Push Docker image to ECR
         run: |
-          docker push $ECR_REGISTRY/$ECR_REPO:latest
-          docker push $ECR_REGISTRY/$ECR_REPO:${{ needs.version.outputs.image_tag }}
+          docker push $ECR_REGISTRY/$ECR_REPO:$TAG
+
+          ## push latest tag only if on main branch
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            docker push $ECR_REGISTRY/$ECR_REPO:latest
+          fi
        
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -198,10 +225,16 @@ jobs:
             
       - name: Tag for GHCR
         run: |
-          docker tag feature-flags-api $GHCR/feature-flags-api:latest
-          docker tag feature-flags-api $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
+          docker tag feature-flags-api:$TAG $GHCR/feature-flags-api:$TAG
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              docker tag feature-flags-api:$TAG $GHCR/feature-flags-api:latest
+            fi
       
       - name: Push to GHCR
         run: |
-          docker push $GHCR/feature-flags-api:latest
-          docker push $GHCR/feature-flags-api:${{ needs.version.outputs.image_tag }}
+          docker push $GHCR/feature-flags-api:$TAG
+
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            docker push $GHCR/feature-flags-api:latest
+          fi
