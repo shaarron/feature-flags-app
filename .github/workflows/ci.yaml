@@ -1,4 +1,4 @@
-name: Feature Flags CI Pipeline 
+name: Feature Flags CI Pipeline (PRs)
 
 on:
   pull_request:
@@ -6,81 +6,8 @@ on:
     paths-ignore:
     - 'frontend/**'
     - '**.md'
-
-  workflow_dispatch:
-
 jobs:
-
-  unit_test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Set up virtualenv and install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt    
-
-      - name: Start app in background
-        run: |
-          source venv/bin/activate
-          nohup python app.py > app.log 2>&1 &
-    
-      - name: Run Unit Test
-        run: |
-          status=$(
-            curl \
-              --retry 5 \
-              --retry-delay 2 \
-              --retry-connrefused \
-              --silent \
-              --write-out "%{http_code}" \
-              --output /dev/null \
-              http://localhost:5000/flags
-          )
-          test "$status" -eq 200 \
-            && echo "App is up" \
-            || (echo "Unexpected status: $status" && exit 1)
-
-  e2e_test:
-    needs: [unit_test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Run docker compose up
-        env:
-          MONGO_INITDB_ROOT_USERNAME: test-admin
-          MONGO_INITDB_ROOT_PASSWORD: test-password
-        run: docker compose -f docker-compose.local.yaml up -d --wait --build
-
-      - name: Verify containers
-        run: docker ps -a
-
-      - name: Run E2E Test
-        run: |
-          set -o errexit -o pipefail
-          response=$(curl --fail --silent http://localhost/flags)
-               
-          echo "$response" | jq -e 'type == "array"' > /dev/null || {
-            echo "Response is not an array"
-            exit 1
-          }
-          
-          echo "$response" | jq -e 'length > 0' > /dev/null || {
-            echo "No feature flags found"
-            exit 1
-          }
-          
-          echo "$response" | jq -e '.[0] | has("_id") and has("name") and has("environments")' > /dev/null || {
-            echo "First flag missing required keys"
-            exit 1
-          }
-          echo "E2E test passed"
+  run-tests:
+    uses: ./.github/workflows/reusable-tests.yaml
+    secrets: inherit # Pass all secrets to the called workflow (future-proofing)
+ 

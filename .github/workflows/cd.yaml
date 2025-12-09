@@ -10,7 +10,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  tests:
+    uses: ./.github/workflows/reusable-tests.yaml
+    secrets: inherit
+
   version:
+    needs: [tests]
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -34,7 +39,6 @@ jobs:
           FORCE_WITHOUT_CHANGES: "true"
           WITH_V: true
 
-      # Calculate the Image Tag for all branches
       - name: Calculate Image Tag
         id: set_tag
         run: |
