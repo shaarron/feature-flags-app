@@ -164,6 +164,7 @@ jobs:
         env:
           NEW_TAG: ${{ needs.version.outputs.image_tag }}
           BRANCH_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -194,13 +195,38 @@ jobs:
 
           echo "Updating $TARGET_FILE with tag: $NEW_TAG"
 
-          yq -i '.image.tag = env(NEW_TAG)' $TARGET_FILE
+          if [[ "$TARGET_ENV" == "prod" ]]; then
+            # === PROD FLOW: CREATE PULL REQUEST ===
+            echo "Detected Production. Starting Pull Request flow..."
+            
+            PR_BRANCH="release/prod-$NEW_TAG"
+            git checkout -b $PR_BRANCH
+            yq -i '.image.tag = env(NEW_TAG)' $TARGET_FILE
 
-          # COMMIT AND PUSH
-          if [[ -n $(git status -s) ]]; then
-            git add $TARGET_FILE
-            git commit -m "chore($TARGET_ENV): update image tag to $NEW_TAG"
-            git push origin main
+            if [[ -z $(git status -s) ]]; then
+              echo "No changes detected. Image tag is already up to date."
+              exit 0
+            fi
+
+            git commit -am "chore(prod): promote $NEW_TAG"
+            git push origin $PR_BRANCH
+          
+            gh pr create \
+              --title "Promote $NEW_TAG to Production" \
+              --body "Automated update of image tag $NEW_TAG triggered by pipeline." \
+              --base main \
+              --head $PR_BRANCH
+
           else
-            echo "No changes needed."
-          fi
+            # === DEV/STAGING FLOW: DIRECT COMMIT ===
+            echo "Detected $TARGET_ENV. Starting Direct Commit flow..."
+            yq -i '.image.tag = env(NEW_TAG)' $TARGET_FILE
+          
+            if [[ -n $(git status -s) ]]; then
+              git add $TARGET_FILE
+              git commit -m "chore($TARGET_ENV): update image tag to $NEW_TAG"
+              git push origin main
+            else
+              echo "No changes needed."
+            fi
+
