@@ -25,8 +25,10 @@ This project is split into three repositories, each with a specific role in the 
 ## Table of Contents
 
   - [**Github Actions**](#github-actions)
-    - [Feature Flags CI/CD](#feature-flags-cicd)
+    - [Feature Flags CI](#feature-flags-ci)
+    - [Feature Flags CD](#feature-flags-cd)
     - [Sync Frontend to S3](#sync-frontend-to-s3)
+    - [Reusable Tests](#reusable-tests)
     - [Required Secrets & Variables](#required-secrets--variables)
 
   - [**Architecture**](#architecture)
@@ -45,13 +47,25 @@ This project is split into three repositories, each with a specific role in the 
   - [**API Documentation**](#api-documentation)
 ## Github Actions
 
-### [Feature Flags CI/CD](.github/workflows/feature-flags-ci-cd.yaml)
-This GitHub Actions workflow automates testing, versioning, and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
+### [Feature Flags CI](.github/workflows/ci.yaml)
+This GitHub Actions workflow automates testing and building of the **Feature Flags API** Docker image.
+
+### [Feature Flags CD](.github/workflows/cd.yaml)
+This GitHub Actions workflow automates testing, versioning and publishing of the **Feature Flags API** Docker image to **AWS Elastic Container Registry (ECR)** & GitHub Container Registry (**GHCR**).
 
 
 ### [Sync Frontend to S3](.github/workflows/s3-frontend-sync.yaml)
 
 This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
+
+### [Reusable Tests](.github/workflows/reusable-tests.yaml)
+
+This reusable workflow provides automated testing for the **Feature Flags API**, It includes:
+
+- **Unit Test**: Starts the Flask app in a virtual environment and validates the `/flags` endpoint returns a 200 status code.
+- **E2E Test**: Runs the full Docker Compose stack ([docker-compose.local.yaml](docker-compose.local.yaml)) with MongoDB and Nginx, then validates that the API returns properly structured feature flag data with required fields.
+
+This workflow is designed to be called from other workflows using the `workflow_call` trigger.
 
 ### Required Secrets & Variables
 
@@ -63,7 +77,7 @@ Navigate to **Settings → Secrets and variables → Actions → Repository secr
 
 | Secret Name | Description | Used In |
 |------------|-------------|---------|
-| `OIDC_AWS_ROLE_ARN` | AWS IAM role ARN for OIDC authentication | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
+| `OIDC_AWS_ROLE_ARN` | AWS IAM role ARN for OIDC authentication | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
 
 **Note**: `GITHUB_TOKEN` is automatically provided by GitHub Actions and doesn't need manual configuration.
 
@@ -73,9 +87,9 @@ Navigate to **Settings → Secrets and variables → Actions → Repository vari
 
 | Variable Name | Description | Example Value | Used In |
 |--------------|-------------|---------------|---------|
-| `AWS_REGION` | AWS region where resources are deployed | `ap-south-1` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
-| `ECR_REGISTRY` | AWS ECR registry URL | `888432181118.dkr.ecr.ap-south-1.amazonaws.com` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
-| `ECR_REPO` | ECR repository name | `feature-flags-api` | [feature-flags-ci-cd.yaml](.github/workflows/feature-flags-ci-cd.yaml) |
+| `AWS_REGION` | AWS region where resources are deployed | `ap-south-1` | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml), [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
+| `ECR_REGISTRY` | AWS ECR registry URL | `888432181118.dkr.ecr.ap-south-1.amazonaws.com` | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml) |
+| `ECR_REPO` | ECR repository name | `feature-flags-api` | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml) |
 | `S3_FRONTEND_BUCKET_URL` | S3 bucket URL for frontend files | `s3://your-bucket-name` | [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
 
 #### AWS OIDC Configuration

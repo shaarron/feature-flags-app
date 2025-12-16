@@ -1,4 +1,4 @@
-name: Feature Flags CI Pipeline (PRs)
+name: Feature Flags CI Pipeline
 
 on:
   pull_request:
