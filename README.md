@@ -9,7 +9,7 @@ This app lets you create, update, toggle, and delete feature flags across multip
 ### Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
 
- 1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app#))** **<--Current Repo**
+ 1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app))** **<--Current Repo**
      * Contains the Feature Flags API & UI 
      * Contains the GitHub Actions workflows to build the feature-flags-app image & sync frontend s3 bucket 
 
@@ -38,7 +38,7 @@ This project is split into three repositories, each with a specific role in the 
     - [Docker Compose Architecture](#docker-compose-architecture)
 
 
-  - [**Observabillity**](#observabillity)
+  - [**Observability**](#observability)
     - [Monitoring](#monitoring)
     - [Logging](#logging)
   - [**Running locally**](#running-locally)
@@ -94,11 +94,13 @@ Navigate to **Settings → Secrets and variables → Actions → Repository vari
 
 #### AWS OIDC Configuration
 
-Both workflows use AWS OIDC for authentication.
+Both workflows rely on **AWS OIDC** for secure, keyless authentication. You have two options to set this up:
 
-Create the oidc using terraform from `/oidc` directory in **[feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure/tree/main)** repo
+1. **Via Terraform**:  
+   Run the Terraform code located in the `/oidc` directory of the **[feature-flags-infrastructure](https://github.com/shaarron/feature-flags-infrastructure/tree/main)** repository. This will automatically provision the necessary AWS Identity Provider and IAM Roles.
 
-Or create it manually - for more details on setting up AWS OIDC with GitHub Actions, see the [AWS documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
+2. **Manually**:  
+   Follow the official [GitHub Actions & AWS OIDC Guide](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)
 
 
 
@@ -127,7 +129,7 @@ Or create it manually - for more details on setting up AWS OIDC with GitHub Acti
 
 
 
-## Observabillity 
+## Observability 
 
 The application comes with pre-configured dashboards (available in the [**feature-flags-resources**](https://github.com/shaarron/feature-flags-resources) Repository) to provide immediate insight into the application health.
 
@@ -188,7 +190,7 @@ The `docker-compose.yml` file orchestrates the following services:
     - **Config mounts** (./nginx.conf, ./static, ./templates) are shared with the Nginx service for configuration and static asset serving.
 
 
-![dokcer-compose-architecture](/docker-compose-architecture.svg)
+![docker-compose-architecture](/docker-compose-architecture.svg)
 
 
 #### Instructions 
