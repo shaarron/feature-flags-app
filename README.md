@@ -4,9 +4,8 @@ A lightweight **Feature Flags App** built with **Python** (**Flask**), **MongoDB
 
 This app lets you create, update, toggle, and delete feature flags across multiple environments (`development`, `staging`, `production`).  
 
-<img src="feature-flags-web-demo.png" alt="feature-flags-web-demo" width="700">
 
-### Repositories Structure
+## Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
 
  1. **Application** Repository **([feature-flags-app](https://github.com/shaarron/feature-flags-app))** **<--Current Repo**
@@ -30,6 +29,7 @@ This project is split into three repositories, each with a specific role in the 
     - [VPC Architecture](#vpc-architecture---high-availability)
     - [Branching Strategy](#branching-strategy)
   
+  - [**User Interface (UI) Demo**](#ui-demo)
 
   - [**Github Actions**](#github-actions)
     - [Feature Flags CI](#feature-flags-ci)
@@ -62,7 +62,8 @@ This project is split into three repositories, each with a specific role in the 
    - Includes environment-specific configurations for `dev`, `staging`, `prod`.
 
  **MongoDB**:
-   - Serves as the persistent storage for feature flags.
+ 
+ - Serves as the persistent storage for feature flags.
 
 **Frontend**:
    - Static, Stored in S3 and served via CloudFront.
@@ -88,6 +89,12 @@ The project follows a **GitOps-based branching strategy** where branches map dir
 Each environment updates its respective helm configuration in the **[feature-flags-resources](https://github.com/shaarron/feature-flags-resources)** repository, ensuring continuous integration and delivery.
 
 <img src="branches-diagram.png" alt="branches-diagram" width="700">
+
+## User Interface (UI) Demo
+
+<!-- <img src="feature-flags-web-demo.png" alt="feature-flags-web-demo" width="800"> -->
+
+<img src="feature-flags-ui.gif" alt="feature-flags-ui" width="600">
 
 ## Github Actions
 
