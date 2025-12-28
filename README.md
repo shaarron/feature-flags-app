@@ -58,7 +58,7 @@ The project follows a **GitOps-based branching strategy** where branches map dir
 
 * **`main` branch** → Promotes semantic versions (e.g., `v1.0.0`) to **Production** by triggering a **Pull Request** for manual approval.
 
-Each environment updates its respective helm configuration in the **feature-flags-resources** repository, ensuring continuous integration and delivery.
+Each environment updates its respective helm configuration in the **[feature-flags-resources](https://github.com/shaarron/feature-flags-resources)** repository, ensuring continuous integration and delivery.
 
 <img src="branches-diagram.png" alt="branches-diagram" width="700">
 
@@ -73,7 +73,7 @@ This GitHub Actions workflow automates testing, versioning and publishing of the
 
 ### [Sync Frontend to S3](.github/workflows/s3-frontend-sync.yaml)
 
-This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))** and syncs the changes to the s3 bucket that holds those static files.
+This workflow detects changes in frontend dir (on push to **[/frontend](/frontend))**, syncs the changes to the s3 bucket (that holds those static files) and invalidates the CloudFront cache.
 
 ### [Reusable Tests](.github/workflows/reusable-tests.yaml)
 
