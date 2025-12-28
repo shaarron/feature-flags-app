@@ -4,7 +4,7 @@ A lightweight **Feature Flags App** built with **Python** (**Flask**), **MongoDB
 
 This app lets you create, update, toggle, and delete feature flags across multiple environments (`development`, `staging`, `production`).  
 
-<img src="feature-flags-web-demo.png" alt="feature-flags-web-demo" width="1000">
+<img src="feature-flags-web-demo.png" alt="feature-flags-web-demo" width="700">
 
 ### Repositories Structure
 This project is split into three repositories, each with a specific role in the deployment and delivery workflow:
@@ -24,6 +24,7 @@ This project is split into three repositories, each with a specific role in the 
   
 ## Table of Contents
 
+  - [**Branching Strategy**](#branching-strategy)
   - [**Github Actions**](#github-actions)
     - [Feature Flags CI](#feature-flags-ci)
     - [Feature Flags CD](#feature-flags-cd)
@@ -45,6 +46,22 @@ This project is split into three repositories, each with a specific role in the 
     - [Using Docker Compose](#using-docker-compose)
     - [Running app as a standalone](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
   - [**API Documentation**](#api-documentation)
+
+
+## Branching Strategy
+
+The project follows a **GitOps-based branching strategy** where branches map directly to deployment environments with specific versioning rules:
+
+* **`dev` branch** → Deploys `dev-<SHA>` tags automatically to the **Development** environment via direct commit.
+
+* **`staging` branch** → Deploys `rc-<SHA>` tags automatically to the **Staging** environment via direct commit.
+
+* **`main` branch** → Promotes semantic versions (e.g., `v1.0.0`) to **Production** by triggering a **Pull Request** for manual approval.
+
+Each environment updates its respective helm configuration in the **feature-flags-resources** repository, ensuring continuous integration and delivery.
+
+<img src="branches-diagram.png" alt="branches-diagram" width="700">
+
 ## Github Actions
 
 ### [Feature Flags CI](.github/workflows/ci.yaml)
@@ -91,6 +108,7 @@ Navigate to **Settings → Secrets and variables → Actions → Repository vari
 | `ECR_REGISTRY` | AWS ECR registry URL | `888432181118.dkr.ecr.ap-south-1.amazonaws.com` | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml) |
 | `ECR_REPO` | ECR repository name | `feature-flags-api` | [ci.yaml](.github/workflows/ci.yaml), [cd.yaml](.github/workflows/cd.yaml) |
 | `S3_FRONTEND_BUCKET_URL` | S3 bucket URL for frontend files | `s3://your-bucket-name` | [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
+| `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront Distribution ID for cache invalidation | `E1XXXXXX` | [s3-frontend-sync.yaml](.github/workflows/s3-frontend-sync.yaml) |
 
 #### AWS OIDC Configuration
 
@@ -151,9 +169,6 @@ The Grafana dashboard monitors the Feature Flags API by combining Flask applicat
 
 
   <img src="kibana-dashboard-demo.png" alt="kibana-dashboard-demo" width=900>
-
-
-
 
 ## Running locally
 
@@ -306,7 +321,7 @@ Fetches a specific feature flag by ID.
 }
 ```
 
-##### 4. Update a Flag
+#### 4. Update a Flag
 ```
 PUT /flags/<id>
 ```
@@ -329,7 +344,7 @@ Updates name, description, or environment states.
 }
 ```
 
-##### 5. Delete a Flag
+#### 5. Delete a Flag
 ```
 DELETE /flags/<id>
 ```
