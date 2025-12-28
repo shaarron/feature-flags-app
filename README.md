@@ -24,7 +24,13 @@ This project is split into three repositories, each with a specific role in the 
   
 ## Table of Contents
 
-  - [**Branching Strategy**](#branching-strategy)
+  - [**Architecture**](#architecture)
+    - [Service Architecture](#service-architecture)
+    - [Full Flow Architecture](#full-flow-architecture)
+    - [VPC Architecture](#vpc-architecture---high-availability)
+    - [Branching Strategy](#branching-strategy)
+  
+
   - [**Github Actions**](#github-actions)
     - [Feature Flags CI](#feature-flags-ci)
     - [Feature Flags CD](#feature-flags-cd)
@@ -32,23 +38,44 @@ This project is split into three repositories, each with a specific role in the 
     - [Reusable Tests](#reusable-tests)
     - [Required Secrets & Variables](#required-secrets--variables)
 
-  - [**Architecture**](#architecture)
-    - [Service Architecture](#service-architecture)
-    - [Full Flow Architecture](#full-flow-architecture)
-    - [VPC Architecture](#vpc-architecture---high-availability)
-    - [Docker Compose Architecture](#docker-compose-architecture)
-
-
   - [**Observability**](#observability)
     - [Monitoring](#monitoring)
     - [Logging](#logging)
+
   - [**Running locally**](#running-locally)
-    - [Using Docker Compose](#using-docker-compose)
+    - [Docker Compose](#docker-compose)
+      - [Architecture](#docker-compose-architecture)
+      - [Running instructions](#running-instructions)
     - [Running app as a standalone](#running-app-as-a-standalone-no-db-using-python-virtual-environment)
+
   - [**API Documentation**](#api-documentation)
 
 
-## Branching Strategy
+
+## Architecture 
+
+### Service Architecture 
+
+**API**:
+   - Acts as the core API server for managing feature flags.
+   - Provides endpoints for creating, updating, toggling, and deleting feature flags.
+   - Includes environment-specific configurations for `dev`, `staging`, `prod`.
+
+ **MongoDB**:
+   - Serves as the persistent storage for feature flags.
+
+**Frontend**:
+   - Static, Stored in S3 and served via CloudFront.
+
+### Full Flow Architecture
+
+![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
+
+### VPC Architecture - High Availability
+
+![feature-flags-full-architecture](/ff-vpc-diagram.svg)
+
+### Branching Strategy
 
 The project follows a **GitOps-based branching strategy** where branches map directly to deployment environments with specific versioning rules:
 
@@ -122,30 +149,6 @@ Both workflows rely on **AWS OIDC** for secure, keyless authentication. You have
 
 
 
-## Architecture 
-
-### Service Architecture 
-
-**API**:
-   - Acts as the core API server for managing feature flags.
-   - Provides endpoints for creating, updating, toggling, and deleting feature flags.
-   - Includes environment-specific configurations for `dev`, `staging`, `prod`.
-
- **MongoDB**:
-   - Serves as the persistent storage for feature flags.
-
-**Frontend**:
-   - Static, Stored in S3 and served via CloudFront.
-
-### Full Flow Architecture
-
-![feature-flags-full-architecture](/feature-flags-full-diagram.svg)
-
-### VPC Architecture - High Availability
-
-![feature-flags-full-architecture](/ff-vpc-diagram.svg)
-
-
 
 ## Observability 
 
@@ -172,9 +175,9 @@ The Grafana dashboard monitors the Feature Flags API by combining Flask applicat
 
 ## Running locally
 
-### Using Docker Compose
+### Docker Compose
 
-#### Docker Compose architecture 
+#### Docker Compose Architecture 
 
 The `docker-compose.yml` file orchestrates the following services:
 
@@ -208,7 +211,7 @@ The `docker-compose.yml` file orchestrates the following services:
 ![docker-compose-architecture](/docker-compose-architecture.svg)
 
 
-#### Instructions 
+#### Running Instructions 
 ```bash
 git clone https://github.com/shaarron/feature-flags-app.git
 
