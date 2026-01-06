@@ -11,7 +11,7 @@ from prometheus_flask_exporter import PrometheusMetrics
 import logging
 import sys
 import time
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json
 import traceback
 
 app = Flask(__name__)
@@ -20,7 +20,7 @@ metrics = PrometheusMetrics(app)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logHandler = logging.StreamHandler(sys.stdout)
-formatter = jsonlogger.JsonFormatter(
+formatter = json.JsonFormatter(
     "%(asctime)s %(levelname)s %(name)s %(message)s"
 )
 logHandler.setFormatter(formatter)
