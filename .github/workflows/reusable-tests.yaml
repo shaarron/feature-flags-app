@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  unit-test:
+  unit_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
       - name: Run Pytest
         run: python -m pytest tests/
 
-  security-scan:
+  security_scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-          
+
   smoke_test:
     needs: [unit_test]
     runs-on: ubuntu-latest
