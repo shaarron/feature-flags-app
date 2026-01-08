@@ -39,6 +39,17 @@ jobs:
             && echo "App is up" \
             || (echo "Unexpected status: $status" && exit 1)
 
+  snyk_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+          
   e2e_test:
     needs: [unit_test]
     runs-on: ubuntu-latest
