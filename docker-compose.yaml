@@ -1,4 +1,10 @@
 services:
+  tests:
+    build: .
+    entrypoint: ""
+    command: python -m unittest discover api/tests -v
+    volumes:
+      - ./api:/app/api
   api:
     image: ghcr.io/shaarron/feature-flags-service/feature-flags-api:latest
     environment:

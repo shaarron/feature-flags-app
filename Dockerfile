@@ -29,10 +29,11 @@ RUN apt-get update && \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY --chown=1001:1001 app.py .
+COPY --chown=1001:1001 api/ api/
+ENV PYTHONPATH="${PYTHONPATH}:/app/api"
 
 USER app_user
 EXPOSE 5000
 
 ENTRYPOINT ["python"]
-CMD ["app.py"]
+CMD ["api/app.py"]
