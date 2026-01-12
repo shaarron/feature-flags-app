@@ -9,7 +9,6 @@ class FeatureFlagService:
         return self.storage.get_all(environment)
 
     def create_flag(self, data):
-        # Validation can go here if needed, but for now just proxy
         self.storage.insert_one(data)
         return data
 
