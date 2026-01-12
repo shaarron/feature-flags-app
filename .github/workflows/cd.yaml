@@ -104,22 +104,22 @@ jobs:
           docker compose -f docker-compose.local.yaml build && \
           docker tag feature-flags-api:latest feature-flags-api:$TAG 
 
-      - name: Tag Docker image for ECR
-        run: |
-          docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:$TAG
+      # - name: Tag Docker image for ECR
+      #   run: |
+      #     docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:$TAG
 
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:latest
-          fi
+      #     if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+      #       docker tag feature-flags-api:$TAG $ECR_REGISTRY/$ECR_REPO:latest
+      #     fi
 
-      - name: Push Docker image to ECR
-        run: |
-          docker push $ECR_REGISTRY/$ECR_REPO:$TAG
+      # - name: Push Docker image to ECR
+      #   run: |
+      #     docker push $ECR_REGISTRY/$ECR_REPO:$TAG
 
-          ## push latest tag only if on main branch
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            docker push $ECR_REGISTRY/$ECR_REPO:latest
-          fi
+      #     ## push latest tag only if on main branch
+      #     if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+      #       docker push $ECR_REGISTRY/$ECR_REPO:latest
+      #     fi
        
       - name: Login to GHCR
         uses: docker/login-action@v3
