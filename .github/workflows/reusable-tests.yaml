@@ -11,33 +11,22 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up virtualenv and install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt    
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      - name: Start app in background
+      - name: Install dependencies
         run: |
-          source venv/bin/activate
-          nohup python app.py > app.log 2>&1 &
-    
-      - name: Run Unit Test
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
+
+      - name: Run Unit Tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/api
         run: |
-          status=$(
-            curl \
-              --retry 5 \
-              --retry-delay 2 \
-              --retry-connrefused \
-              --silent \
-              --write-out "%{http_code}" \
-              --output /dev/null \
-              http://localhost:5000/flags
-          )
-          test "$status" -eq 200 \
-            && echo "App is up" \
-            || (echo "Unexpected status: $status" && exit 1)
+          python -m unittest discover api/tests -v
+
 
   snyk_scan:
     runs-on: ubuntu-latest
