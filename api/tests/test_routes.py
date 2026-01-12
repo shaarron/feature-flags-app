@@ -6,19 +6,11 @@ import sys
 import unittest
 from unittest.mock import patch, MagicMock
 
-# Create mock storage before any API imports
 mock_storage_instance = MagicMock()
 
-# Patch at the module where it's imported (feature_flag_service imports from storage)
-# Since feature_flag_service.py uses 'from storage import FeatureFlagStorage',
-# we need to patch 'feature_flag_service.FeatureFlagStorage' after the import happens
-# OR we can patch 'storage.FeatureFlagStorage' before the import
-
-# Start patching before any API module imports
 storage_patcher = patch('storage.FeatureFlagStorage', return_value=mock_storage_instance)
 storage_patcher.start()
 
-# Now we can safely import the app
 from api.app import app
 from api import routes
 
