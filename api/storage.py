@@ -23,9 +23,9 @@ class FeatureFlagStorage:
             user = os.environ.get('MONGO_INITDB_ROOT_USERNAME')
             pw = os.environ.get('MONGO_INITDB_ROOT_PASSWORD')
             host = os.environ.get('MONGO_HOST', 'localhost')
-            
-            uri = f"mongodb://{user}:{pw}@{host}:27017/?authSource=admin" if user and pw else 'mongodb://localhost:27017/'
-            # Reduce timeout for faster failure in tests if not mocked
+            is_replica_set = os.environ.get('MONGO_IS_REPLICA_SET', 'false').lower() == 'true'
+            rs_params = "&replicaSet=mongo&authMechanism=SCRAM-SHA-256" if is_replica_set else ""
+            uri = f"mongodb://{user}:{pw}@{host}:27017/?authSource=admin{rs_params}" if user and pw else 'mongodb://localhost:27017/'
             self.client = MongoClient(uri, serverSelectionTimeoutMS=2000)
             self.client.admin.command('ping')
             self.db = self.client.feature_flags_db

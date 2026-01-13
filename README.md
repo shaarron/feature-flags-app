@@ -113,7 +113,7 @@ This workflow detects changes in frontend dir (on push to **[/frontend](/fronten
 
 This reusable workflow provides automated testing for the **Feature Flags API**, It includes:
 
-- **Unit Test**: Starts the Flask app in a virtual environment and validates the `/flags` endpoint returns a 200 status code.
+- **Unit Test**: Runs the Python unit test suite located in `api/tests`, validating the API logic and mocking database interactions.
 - **E2E Test**: Runs the full Docker Compose stack ([docker-compose.local.yaml](docker-compose.local.yaml)) with MongoDB and Nginx, then validates that the API returns properly structured feature flag data with required fields.
 
 This workflow is designed to be called from other workflows using the `workflow_call` trigger.
@@ -241,7 +241,9 @@ The application will be available at:
 - **MongoDB**: localhost:27017
 
 
-### Running app as a standalone (no DB): Using Python Virtual Environment
+### Running app manually (Python)
+
+> **Note**: The application requires a running MongoDB instance.
 
 ```bash
 git clone https://github.com/shaarron/feature-flags-app.git
@@ -254,7 +256,11 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Start MongoDB (if not running elsewhere)
+docker run -d -p 27017:27017 mongo:6.0
+
 # Run the application
+cd api
 python app.py
 ```
 
